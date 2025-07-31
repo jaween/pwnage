@@ -55,12 +55,27 @@ const forumThreadSchema = z.object({
 
 export type ForumThread = z.infer<typeof forumThreadSchema>;
 
+export const patreonPostSchema = z.object({
+  id: z.string(),
+  url: z.string(),
+  publishedAt: z.string(),
+  title: z.string(),
+  teaserText: z.string().nullable().optional(),
+  imageUrl: z.string().nullable().optional(),
+});
+
+export type PatreonPost = z.infer<typeof patreonPostSchema>;
+
 const postSchema = z.object({
-  type: z.union([z.literal("youtube_video"), z.literal("forum_thread")]),
+  type: z.union([
+    z.literal("youtube_video"),
+    z.literal("forum_thread"),
+    z.literal("patreon_post"),
+  ]),
   id: z.string(),
   publishedAt: z.string(),
   updatedAt: z.string(),
-  data: z.union([youtubeVideoSchema, forumThreadSchema]),
+  data: z.union([youtubeVideoSchema, forumThreadSchema, patreonPostSchema]),
 });
 
 export type Post = z.infer<typeof postSchema>;

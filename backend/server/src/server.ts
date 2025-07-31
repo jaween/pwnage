@@ -4,6 +4,7 @@ import { router } from "./router.js";
 import cors from "cors";
 import * as gcp from "gcp-metadata";
 import { Database } from "./database.js";
+import { Patreon } from "./patreon.js";
 
 async function init() {
   let projectId = process.env.GCP_PROJECT_ID;
@@ -17,7 +18,13 @@ async function init() {
     }
   }
 
+  let patreonCampaignId = process.env.PATREON_CAMPAIGN_ID;
+  if (!patreonCampaignId) {
+    throw "Missing Patreon Campaign ID";
+  }
+
   const database = new Database();
+  const patreon = new Patreon(patreonCampaignId);
 
   const expressApp = express();
   expressApp.use(cors());
@@ -31,7 +38,7 @@ async function init() {
     );
     next();
   });
-  expressApp.use("/v1", router(database));
+  expressApp.use("/v1", router(database, patreon));
 
   const port = process.env.PORT || 8080;
   expressApp.listen(port, () => {

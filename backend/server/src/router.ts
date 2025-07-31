@@ -2,14 +2,16 @@ import { Request, Response, Router } from "express";
 import {
   Database,
   ForumThread,
+  PatreonPost,
   Post,
   YoutubeVideo as YoutubeVideo,
 } from "./database.js";
 import axios from "axios";
 import xml2js from "xml2js";
 import { generateShortId } from "./util.js";
+import { Patreon } from "./patreon.js";
 
-export function router(database: Database): Router {
+export function router(database: Database, patreon: Patreon): Router {
   const router = Router();
 
   router.post("/youtube", async (req: Request, res: Response) => {
@@ -151,9 +153,35 @@ export function router(database: Database): Router {
       return res.status(500).json({ error: "Error saving posts" });
     }
 
-    return res
-      .status(200)
-      .json({ message: "Forum posts saved", count: posts.length });
+    return res.status(200);
+  });
+
+  router.post("/patreon", async (req: Request, res: Response) => {
+    let patreonPosts: PatreonPost[];
+    try {
+      patreonPosts = await patreon.getRecentPosts();
+    } catch (e) {
+      return res.status(500).json({ error: "Error fetching Patreon posts" });
+    }
+
+    const posts: Post[] = patreonPosts.map((post): Post => {
+      return {
+        id: generateShortId(`patreon_post_${post.id}`),
+        type: "patreon_post",
+        publishedAt: post.publishedAt,
+        updatedAt: post.publishedAt,
+        data: post,
+      };
+    });
+
+    try {
+      await database.putPosts(posts);
+    } catch (e) {
+      console.error(e);
+      return res.status(500).json({ error: "Error saving posts" });
+    }
+
+    return res.status(200);
   });
 
   return router;
