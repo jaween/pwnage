@@ -28,7 +28,7 @@ function initFirebaseAdmin() {
 }
 
 const youtubeVideoSchema = z.object({
-  videoId: z.string(),
+  id: z.string(),
   title: z.string(),
   url: z.url(),
   publishedAt: z.string(),
@@ -41,11 +41,25 @@ const youtubeVideoSchema = z.object({
 
 export type YoutubeVideo = z.infer<typeof youtubeVideoSchema>;
 
+const forumThreadSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  url: z.url(),
+  publishedAt: z.string(),
+  updatedAt: z.string(),
+  uid: z.string(),
+  author: z.string(),
+  avatarUrl: z.string(),
+  content: z.string(),
+});
+
+export type ForumThread = z.infer<typeof forumThreadSchema>;
+
 const postSchema = z.object({
-  type: "youtube",
+  type: z.union([z.literal("youtube_video"), z.literal("forum_thread")]),
   id: z.string(),
   publishedAt: z.string(),
-  data: z.union([youtubeVideoSchema]),
+  data: z.union([youtubeVideoSchema, forumThreadSchema]),
 });
 
 export type Post = z.infer<typeof postSchema>;
