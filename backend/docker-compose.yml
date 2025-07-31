@@ -1,0 +1,9 @@
+services:
+  pwnage_server:
+    build: ./server
+    environment:
+      NODE_ENV: ${NODE_ENV}
+    image: pwnage_server
+    container_name: pwnage_server
+    ports:
+      - 8080:8080
