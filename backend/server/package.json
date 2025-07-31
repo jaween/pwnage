@@ -15,11 +15,15 @@
     "@google-cloud/logging-winston": "^6.0.0",
     "@google-cloud/storage": "^7.13.0",
     "@types/formidable": "^3.4.5",
+    "@types/xml2js": "^0.4.14",
+    "axios": "^1.11.0",
     "cors": "^2.8.5",
     "express": "^4.19.2",
     "firebase-admin": "^12.7.0",
     "gcp-metadata": "^6.1.0",
-    "winston": "^3.14.2"
+    "winston": "^3.14.2",
+    "xml2js": "^0.6.2",
+    "zod": "^4.0.14"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
