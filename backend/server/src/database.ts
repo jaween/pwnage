@@ -59,6 +59,7 @@ const postSchema = z.object({
   type: z.union([z.literal("youtube_video"), z.literal("forum_thread")]),
   id: z.string(),
   publishedAt: z.string(),
+  updatedAt: z.string(),
   data: z.union([youtubeVideoSchema, forumThreadSchema]),
 });
 

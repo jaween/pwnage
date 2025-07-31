@@ -56,6 +56,7 @@ export function router(database: Database): Router {
         id: generateShortId(`youtube_video_${video.id}`),
         type: "youtube_video",
         publishedAt: video.publishedAt,
+        updatedAt: video.updatedAt,
         data: video,
       };
     });
@@ -138,6 +139,7 @@ export function router(database: Database): Router {
         id: generateShortId(`forum_thread_${thread.id}`),
         type: "forum_thread",
         publishedAt: thread.publishedAt,
+        updatedAt: thread.updatedAt,
         data: thread,
       });
     }
