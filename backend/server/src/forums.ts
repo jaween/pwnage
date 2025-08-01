@@ -2,24 +2,6 @@ import axios from "axios";
 import xml2js from "xml2js";
 import { ForumThread } from "./database.js";
 
-function parseAnchorTag(anchor: string): { href: string; text: string } | null {
-  const match = anchor.match(/<a\s+href="([^"]+)">([^<]+)<\/a>/);
-  if (!match) return null;
-  return {
-    href: match[1],
-    text: match[2],
-  };
-}
-
-function getQueryParamFromUrl(url: string, queryParam: string): string | null {
-  try {
-    const parsedUrl = new URL(url);
-    return parsedUrl.searchParams.get(queryParam);
-  } catch {
-    return null;
-  }
-}
-
 export class Forums {
   private atomBaseUrl: string;
 
@@ -60,6 +42,23 @@ export class Forums {
 
     const threads: ForumThread[] = [];
 
+    // Saves refetching the same avatar URL for repeat users
+    const avatarUrls: { [uid: string]: string } = {};
+    for (const entry of entries) {
+      let authorAnchorTag = entry.author.name._;
+      const authorUid = getQueryParamFromUrl(
+        parseAnchorTag(authorAnchorTag)?.href ?? "",
+        "uid"
+      );
+      if (!authorUid) {
+        continue;
+      }
+      avatarUrls[authorUid] = "";
+    }
+    for (const uid of Object.keys(avatarUrls)) {
+      avatarUrls[uid] = await queryAvatarUrl(uid);
+    }
+
     for (const entry of entries) {
       let authorAnchorTag = entry.author.name._;
       const { href: authorProfileUrl, text: authorName } = parseAnchorTag(
@@ -88,11 +87,55 @@ export class Forums {
         updatedAt: entry.updated,
         uid: authorUid,
         author: authorName,
-        avatarUrl: `https://forum.8bitwars.com/uploads/avatars/avatar_${authorUid}.png`,
+        avatarUrl: avatarUrls[authorUid],
         content: entry.content?._,
       });
     }
 
     return threads;
   }
+}
+
+function parseAnchorTag(anchor: string): { href: string; text: string } | null {
+  const match = anchor.match(/<a\s+href="([^"]+)">([^<]+)<\/a>/);
+  if (!match) return null;
+  return {
+    href: match[1],
+    text: match[2],
+  };
+}
+
+function getQueryParamFromUrl(url: string, queryParam: string): string | null {
+  try {
+    const parsedUrl = new URL(url);
+    return parsedUrl.searchParams.get(queryParam);
+  } catch {
+    return null;
+  }
+}
+
+async function queryAvatarUrl(authorUid: string): Promise<string> {
+  const baseUrl = "https://forum.8bitwars.com/uploads/avatars";
+  const defaultAvatar = "https://forum.8bitwars.com/images/default_avatar.png";
+
+  const tryUrl = async (url: string): Promise<boolean> => {
+    try {
+      const response = await axios.head(url);
+      return response.status === 200;
+    } catch {
+      return false;
+    }
+  };
+
+  const jpgUrl = `${baseUrl}/avatar_${authorUid}.jpg`;
+  if (await tryUrl(jpgUrl)) {
+    return jpgUrl;
+  }
+
+  const pngUrl = `${baseUrl}/avatar_${authorUid}.png`;
+  if (await tryUrl(pngUrl)) {
+    return pngUrl;
+  }
+
+  return defaultAvatar;
 }
