@@ -124,6 +124,7 @@ abstract class PostData with _$PostData {
     required PostDataType type,
     required String url,
     @DateTimeConverter() required DateTime publishedAt,
+    required String title,
     required String? teaserText,
     required String? imageUrl,
   }) = PatreonPost;
