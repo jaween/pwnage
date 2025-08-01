@@ -8,6 +8,7 @@ import { Patreon } from "./patreon.js";
 import { Youtube } from "./youtube.js";
 import { Forums } from "./forums.js";
 import { GCPAuthMiddleware } from "./auth.js";
+import { AtomFeedService } from "./atom.js";
 
 async function init() {
   let projectId = process.env.GCP_PROJECT_ID;
@@ -43,6 +44,7 @@ async function init() {
     "us-central1",
     serviceAccountEmail
   );
+  const atomFeedService = new AtomFeedService();
   const youtube = new Youtube(youtubeChannelId);
   const forum = new Forums(forumsAtomUrl);
   const patreon = new Patreon(patreonCampaignId);
@@ -61,7 +63,14 @@ async function init() {
   });
   expressApp.use(
     "/v1",
-    router(database, gcpAuthMiddleware, youtube, forum, patreon)
+    router(
+      database,
+      gcpAuthMiddleware,
+      atomFeedService,
+      youtube,
+      forum,
+      patreon
+    )
   );
 
   const port = process.env.PORT || 8080;

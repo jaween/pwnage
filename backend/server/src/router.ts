@@ -5,15 +5,49 @@ import { Patreon } from "./patreon.js";
 import { Youtube } from "./youtube.js";
 import { Forums } from "./forums.js";
 import { GCPAuthMiddleware } from "./auth.js";
+import { AtomFeedService } from "./atom.js";
+import z from "zod";
 
 export function router(
   database: Database,
   gcpAuthMiddleware: GCPAuthMiddleware,
+  atomFeedService: AtomFeedService,
   youtube: Youtube,
   forum: Forums,
   patreon: Patreon
 ): Router {
   const router = Router();
+
+  router.get("/posts/feed", async (req: Request, res: Response) => {
+    const fromQuery = req.query.from;
+    const limitQuery = req.query.limit;
+
+    const dateSchema = z.iso.datetime({ offset: true });
+    const from = dateSchema.safeParse(
+      typeof fromQuery === "string" ? fromQuery : ""
+    ).success
+      ? (fromQuery as string)
+      : new Date().toISOString();
+
+    const limit = Number(limitQuery) > 0 ? Number(limitQuery) : 10;
+
+    let posts: Post[];
+    try {
+      posts = await database.getPostsBefore(from, limit);
+    } catch (e) {
+      console.error("Failed to fetch Posts");
+      return res.sendStatus(500);
+    }
+
+    try {
+      const feedXml = atomFeedService.buildXml(posts, new Date());
+      res.setHeader("Content-Type", "application/atom+xml");
+      res.status(200).send(feedXml);
+    } catch (e) {
+      console.error("Error generating Atom feed:", e);
+      res.status(500);
+    }
+  });
 
   router.post(
     "/internal/poll",

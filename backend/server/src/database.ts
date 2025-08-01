@@ -19,6 +19,27 @@ export class Database {
     }
     await batch.commit();
   }
+
+  async getPostsBefore(publishedAt: string, limit: number): Promise<Post[]> {
+    const snapshot = await this.firestore
+      .collection("posts")
+      .where("publishedAt", "<", publishedAt)
+      .orderBy("publishedAt", "desc")
+      .limit(limit)
+      .get();
+
+    const posts: Post[] = [];
+    for (const doc of snapshot.docs) {
+      const data = doc.data();
+      try {
+        posts.push(postSchema.parse(data));
+      } catch (e) {
+        console.warn(`Invalid Post data for document ${doc.id}`);
+      }
+    }
+
+    return posts;
+  }
 }
 
 function initFirebaseAdmin() {
