@@ -5,6 +5,8 @@ import cors from "cors";
 import * as gcp from "gcp-metadata";
 import { Database } from "./database.js";
 import { Patreon } from "./patreon.js";
+import { Youtube } from "./youtube.js";
+import { Forums } from "./forums.js";
 
 async function init() {
   let projectId = process.env.GCP_PROJECT_ID;
@@ -18,12 +20,24 @@ async function init() {
     }
   }
 
+  let youtubeChannelId = process.env.YOUTUBE_CHANNEL_ID;
+  if (!youtubeChannelId) {
+    throw "Missing YouTube Channel ID";
+  }
+
+  let forumsAtomUrl = process.env.FORUMS_ATOM_URL;
+  if (!forumsAtomUrl) {
+    throw "Missing Forums Atom URL";
+  }
+
   let patreonCampaignId = process.env.PATREON_CAMPAIGN_ID;
   if (!patreonCampaignId) {
     throw "Missing Patreon Campaign ID";
   }
 
   const database = new Database();
+  const youtube = new Youtube(youtubeChannelId);
+  const forum = new Forums(forumsAtomUrl);
   const patreon = new Patreon(patreonCampaignId);
 
   const expressApp = express();
@@ -38,7 +52,7 @@ async function init() {
     );
     next();
   });
-  expressApp.use("/v1", router(database, patreon));
+  expressApp.use("/v1", router(database, youtube, forum, patreon));
 
   const port = process.env.PORT || 8080;
   expressApp.listen(port, () => {
