@@ -12,6 +12,10 @@ export class GCPAuthMiddleware {
   }
 
   middleware = async (req: Request, res: Response, next: NextFunction) => {
+    if (process.env.NODE_ENV === "DEVELOPMENT") {
+      return next();
+    }
+
     const authHeader = req.headers.authorization;
     if (!authHeader?.startsWith("Bearer ")) {
       return res.status(401).send("Missing or invalid auth header");
