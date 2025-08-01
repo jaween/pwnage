@@ -16,7 +16,15 @@ class PwnageApp extends StatelessWidget {
     return _RouterBuilder(
       navigatorObservers: [],
       builder: (context, router) {
-        return MaterialApp.router(routerConfig: router);
+        return MaterialApp.router(
+          routerConfig: router,
+          theme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(
+              brightness: Brightness.dark,
+              seedColor: Colors.red,
+            ),
+          ),
+        );
       },
     );
   }

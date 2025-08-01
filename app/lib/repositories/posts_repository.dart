@@ -8,7 +8,7 @@ class Posts extends _$Posts {
   @override
   Future<List<Post>> build() async {
     final api = ref.watch(apiServiceProvider);
-    final posts = await api.getPosts();
+    final posts = await api.getPosts(limit: 10);
     switch (posts) {
       case Left(:final value):
         throw value;
