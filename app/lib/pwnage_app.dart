@@ -2,7 +2,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:pwnage/feed_page.dart';
+import 'package:pwnage/init_page.dart';
 import 'package:pwnage/not_found_page.dart';
 import 'package:pwnage/repositories/posts_repository.dart';
 import 'package:pwnage/services/api_service.dart';
@@ -16,16 +18,20 @@ class PwnageApp extends StatelessWidget {
     return _RouterBuilder(
       navigatorObservers: [],
       builder: (context, router) {
-        return MaterialApp.router(
-          routerConfig: router,
-          theme: ThemeData(
-            colorScheme: ColorScheme.fromSeed(
-              brightness: Brightness.dark,
-              seedColor: Colors.red,
-            ),
-          ),
-        );
+        return MaterialApp.router(routerConfig: router, theme: _buildTheme());
       },
+    );
+  }
+
+  ThemeData _buildTheme() {
+    final baseTheme = ThemeData(
+      colorScheme: ColorScheme.fromSeed(
+        brightness: Brightness.dark,
+        seedColor: Colors.red,
+      ),
+    );
+    return baseTheme.copyWith(
+      textTheme: GoogleFonts.interTextTheme(baseTheme.textTheme),
     );
   }
 }
@@ -74,6 +80,13 @@ class _RouterBuilderState extends State<_RouterBuilder> {
       routes: [
         GoRoute(
           path: '/',
+          name: 'init',
+          pageBuilder: (context, state) {
+            return TopLevelTransitionPage(child: InitPage());
+          },
+        ),
+        GoRoute(
+          path: '/feed',
           name: 'feed',
           pageBuilder: (context, state) {
             return TopLevelTransitionPage(child: FeedPage());
