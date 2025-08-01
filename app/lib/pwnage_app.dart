@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pwnage/feed_page.dart';
 import 'package:pwnage/not_found_page.dart';
+import 'package:pwnage/repositories/posts_repository.dart';
 import 'package:pwnage/services/api_service.dart';
 import 'package:pwnage/transition.dart';
 
@@ -94,6 +95,7 @@ class _KeepAliveProvidersState extends ConsumerState<_KeepAliveProviders> {
       fireImmediately: true,
       (previous, next) {},
     );
+    ref.listenManual(postsProvider, fireImmediately: true, (previous, next) {});
   }
 
   @override
