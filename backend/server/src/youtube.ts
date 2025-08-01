@@ -32,6 +32,10 @@ export class Youtube {
 
     const videos: YoutubeVideo[] = [];
     for (const entry of entries) {
+      let thumbnailUrl = entry["media:group"][0][
+        "media:thumbnail"
+      ][0].$.url.replace("hqdefault", "maxresdefault");
+
       videos.push({
         id: entry["yt:videoId"][0],
         type: "youtubeVideo",
@@ -39,7 +43,7 @@ export class Youtube {
         url: entry.link[0].$.href,
         publishedAt: entry.published[0],
         updatedAt: entry.updated[0],
-        thumbnailUrl: entry["media:group"][0]["media:thumbnail"][0].$.url,
+        thumbnailUrl: thumbnailUrl,
         description: entry["media:group"][0]["media:description"][0],
         likes: Number(
           entry["media:group"][0]["media:community"][0]["media:starRating"][0].$
