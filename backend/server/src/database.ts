@@ -48,20 +48,14 @@ function initFirebaseAdmin() {
   });
 }
 
-const postDataTypeSchema = z.union([
-  z.literal("youtubeVideo"),
-  z.literal("forumThread"),
-  z.literal("patreonPost"),
-]);
-
 const youtubeVideoSchema = z.object({
   id: z.string(),
-  type: postDataTypeSchema,
+  type: z.literal("youtubeVideo"),
   title: z.string(),
-  url: z.url(),
+  url: z.string(),
   publishedAt: z.string(),
   updatedAt: z.string(),
-  thumbnailUrl: z.url(),
+  thumbnailUrl: z.string(),
   description: z.string(),
   likes: z.int(),
   views: z.int(),
@@ -71,11 +65,11 @@ export type YoutubeVideo = z.infer<typeof youtubeVideoSchema>;
 
 const forumThreadSchema = z.object({
   id: z.string(),
-  type: postDataTypeSchema,
+  type: z.literal("forumThread"),
   title: z.string(),
-  url: z.url(),
+  url: z.string(),
   publishedAt: z.string(),
-  updatedAt: z.string(),
+  updatedAt: z.string().nullable().optional(),
   uid: z.string(),
   author: z.string(),
   avatarUrl: z.string(),
@@ -86,7 +80,7 @@ export type ForumThread = z.infer<typeof forumThreadSchema>;
 
 export const patreonPostSchema = z.object({
   id: z.string(),
-  type: postDataTypeSchema,
+  type: z.literal("patreonPost"),
   url: z.string(),
   publishedAt: z.string(),
   title: z.string(),
@@ -100,7 +94,12 @@ const postSchema = z.object({
   id: z.string(),
   publishedAt: z.string(),
   updatedAt: z.string(),
-  data: z.union([youtubeVideoSchema, forumThreadSchema, patreonPostSchema]),
+  url: z.string(),
+  data: z.discriminatedUnion("type", [
+    youtubeVideoSchema,
+    forumThreadSchema,
+    patreonPostSchema,
+  ]),
 });
 
 export type Post = z.infer<typeof postSchema>;

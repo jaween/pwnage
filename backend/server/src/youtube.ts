@@ -41,12 +41,14 @@ export class Youtube {
         updatedAt: entry.updated[0],
         thumbnailUrl: entry["media:group"][0]["media:thumbnail"][0].$.url,
         description: entry["media:group"][0]["media:description"][0],
-        likes:
+        likes: Number(
           entry["media:group"][0]["media:community"][0]["media:starRating"][0].$
-            .count,
-        views:
+            .count
+        ),
+        views: Number(
           entry["media:group"][0]["media:community"][0]["media:statistics"][0].$
-            .views,
+            .views
+        ),
       });
     }
 

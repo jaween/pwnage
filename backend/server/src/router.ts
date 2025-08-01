@@ -53,6 +53,7 @@ export function router(
           id: generateShortId(`youtubeVideo_${video.id}`),
           publishedAt: video.publishedAt,
           updatedAt: video.updatedAt,
+          url: video.url,
           data: video,
         }));
       } catch (e) {
@@ -65,7 +66,8 @@ export function router(
         forumPosts = threads.map((thread) => ({
           id: generateShortId(`forumThread_${thread.id}`),
           publishedAt: thread.publishedAt,
-          updatedAt: thread.updatedAt,
+          updatedAt: thread.updatedAt ?? thread.publishedAt,
+          url: thread.url,
           data: thread,
         }));
       } catch (e) {
@@ -79,6 +81,7 @@ export function router(
           id: generateShortId(`patreonPost_${post.id}`),
           publishedAt: post.publishedAt,
           updatedAt: post.publishedAt,
+          url: post.url,
           data: post,
         }));
       } catch (e) {
