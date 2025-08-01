@@ -1,8 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pwnage/feed_page.dart';
 import 'package:pwnage/not_found_page.dart';
+import 'package:pwnage/services/api_service.dart';
 import 'package:pwnage/transition.dart';
 
 class PwnageApp extends StatelessWidget {
@@ -70,5 +72,32 @@ class _RouterBuilderState extends State<_RouterBuilder> {
         ),
       ],
     );
+  }
+}
+
+class _KeepAliveProviders extends ConsumerStatefulWidget {
+  final Widget child;
+
+  const _KeepAliveProviders({super.key, required this.child});
+
+  @override
+  ConsumerState<_KeepAliveProviders> createState() =>
+      _KeepAliveProvidersState();
+}
+
+class _KeepAliveProvidersState extends ConsumerState<_KeepAliveProviders> {
+  @override
+  void initState() {
+    super.initState();
+    ref.listenManual(
+      apiServiceProvider,
+      fireImmediately: true,
+      (previous, next) {},
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return widget.child;
   }
 }

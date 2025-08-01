@@ -3,13 +3,18 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:http/http.dart' as http;
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'api_service.freezed.dart';
 part 'api_service.g.dart';
 
 const _kTimeout = Duration(seconds: 10);
+
+@riverpod
+ApiService apiService(Ref ref) => throw 'Uninitialized provider';
 
 class ApiService {
   final String baseUrl;
