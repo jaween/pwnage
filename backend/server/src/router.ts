@@ -1,11 +1,5 @@
 import { Request, Response, Router } from "express";
-import {
-  Database,
-  ForumThread,
-  PatreonPost,
-  Post,
-  YoutubeVideo as YoutubeVideo,
-} from "./database.js";
+import { Database, Post } from "./database.js";
 import { generateShortId } from "./util.js";
 import { Patreon } from "./patreon.js";
 import { Youtube } from "./youtube.js";
@@ -19,78 +13,55 @@ export function router(
 ): Router {
   const router = Router();
 
-  router.post("/youtube", async (req, res) => {
-    let videos: YoutubeVideo[] = [];
+  router.post("/internal/poll", async (req: Request, res: Response) => {
+    let youtubePosts: Post[] = [];
     try {
-      videos = await youtube.getRecentVideos();
+      const videos = await youtube.getRecentVideos();
+      youtubePosts = videos.map((video) => ({
+        id: generateShortId(`youtube_video_${video.id}`),
+        type: "youtube_video",
+        publishedAt: video.publishedAt,
+        updatedAt: video.updatedAt,
+        data: video,
+      }));
     } catch (e) {
-      return res.status(500).json({ error: "Error fetching YouTube videos" });
+      console.error("Failed to fetch YouTube videos");
     }
 
-    const posts: Post[] = videos.map((video) => ({
-      id: generateShortId(`youtube_video_${video.id}`),
-      type: "youtube_video",
-      publishedAt: video.publishedAt,
-      updatedAt: video.updatedAt,
-      data: video,
-    }));
-
+    let forumPosts: Post[] = [];
     try {
-      await database.putPosts(posts);
+      const threads = await forum.getRecentThreads();
+      forumPosts = threads.map((thread) => ({
+        id: generateShortId(`forum_thread_${thread.id}`),
+        type: "forum_thread",
+        publishedAt: thread.publishedAt,
+        updatedAt: thread.updatedAt,
+        data: thread,
+      }));
     } catch (e) {
-      console.error(e);
-      return res.status(500).json({ error: "Failed" });
+      console.error("Failed to fetch Patreon threads");
     }
 
-    return res.sendStatus(200);
-  });
-
-  router.post("/forum", async (req, res) => {
-    let threads: ForumThread[] = [];
+    let patreonPosts: Post[] = [];
     try {
-      threads = await forum.getRecentThreads();
-    } catch (e) {
-      return res.status(500).json({ error: "Error fetching forum threads" });
-    }
-
-    const posts: Post[] = threads.map((thread) => ({
-      id: generateShortId(`forum_thread_${thread.id}`),
-      type: "forum_thread",
-      publishedAt: thread.publishedAt,
-      updatedAt: thread.updatedAt,
-      data: thread,
-    }));
-
-    try {
-      await database.putPosts(posts);
-    } catch (e) {
-      console.error(e);
-      return res.status(500).json({ error: "Error saving posts" });
-    }
-
-    return res.sendStatus(200);
-  });
-
-  router.post("/patreon", async (req: Request, res: Response) => {
-    let patreonPosts: PatreonPost[];
-    try {
-      patreonPosts = await patreon.getRecentPosts();
-    } catch (e) {
-      return res.status(500).json({ error: "Error fetching Patreon posts" });
-    }
-
-    const posts: Post[] = patreonPosts.map((post) => {
-      return {
+      const posts = await patreon.getRecentPosts();
+      patreonPosts = posts.map((post) => ({
         id: generateShortId(`patreon_post_${post.id}`),
         type: "patreon_post",
         publishedAt: post.publishedAt,
         updatedAt: post.publishedAt,
         data: post,
-      };
-    });
+      }));
+    } catch (e) {
+      console.error("Failed to fetch Patreon posts");
+    }
 
     try {
-      await database.putPosts(posts);
+      await database.putPosts([
+        ...youtubePosts,
+        ...forumPosts,
+        ...patreonPosts,
+      ]);
     } catch (e) {
       console.error(e);
       return res.status(500).json({ error: "Error saving posts" });
