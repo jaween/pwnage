@@ -38,6 +38,7 @@ export class Patreon {
         posts.push(
           patreonPostSchema.parse({
             id: entry.id,
+            type: "patreonPost",
             url: entry.attributes.url,
             publishedAt: entry.attributes.published_at,
             title: entry.attributes.title,

@@ -34,6 +34,7 @@ export class Youtube {
     for (const entry of entries) {
       videos.push({
         id: entry["yt:videoId"][0],
+        type: "youtubeVideo",
         title: entry.title[0],
         url: entry.link[0].$.href,
         publishedAt: entry.published[0],

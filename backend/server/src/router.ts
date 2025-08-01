@@ -6,7 +6,6 @@ import { Youtube } from "./youtube.js";
 import { Forums } from "./forums.js";
 import { GCPAuthMiddleware } from "./auth.js";
 import { AtomFeedService } from "./atom.js";
-import z from "zod";
 
 export function router(
   database: Database,
@@ -18,17 +17,12 @@ export function router(
 ): Router {
   const router = Router();
 
-  router.get("/posts/feed", async (req: Request, res: Response) => {
+  router.get("/posts", async (req, res) => {
     const fromQuery = req.query.from;
     const limitQuery = req.query.limit;
 
-    const dateSchema = z.iso.datetime({ offset: true });
-    const from = dateSchema.safeParse(
-      typeof fromQuery === "string" ? fromQuery : ""
-    ).success
-      ? (fromQuery as string)
-      : new Date().toISOString();
-
+    const from =
+      typeof fromQuery === "string" ? fromQuery : new Date().toISOString();
     const limit = Number(limitQuery) > 0 ? Number(limitQuery) : 10;
 
     let posts: Post[];
@@ -39,13 +33,12 @@ export function router(
       return res.sendStatus(500);
     }
 
-    try {
+    const accept = req.headers.accept || "";
+    if (accept.includes("application/atom+xml")) {
       const feedXml = atomFeedService.buildXml(posts, new Date());
-      res.setHeader("Content-Type", "application/atom+xml");
-      res.status(200).send(feedXml);
-    } catch (e) {
-      console.error("Error generating Atom feed:", e);
-      res.status(500);
+      res.type("application/atom+xml").send(feedXml);
+    } else {
+      res.json({ posts: posts });
     }
   });
 
@@ -57,8 +50,7 @@ export function router(
       try {
         const videos = await youtube.getRecentVideos();
         youtubePosts = videos.map((video) => ({
-          id: generateShortId(`youtube_video_${video.id}`),
-          type: "youtube_video",
+          id: generateShortId(`youtubeVideo_${video.id}`),
           publishedAt: video.publishedAt,
           updatedAt: video.updatedAt,
           data: video,
@@ -71,8 +63,7 @@ export function router(
       try {
         const threads = await forum.getRecentThreads();
         forumPosts = threads.map((thread) => ({
-          id: generateShortId(`forum_thread_${thread.id}`),
-          type: "forum_thread",
+          id: generateShortId(`forumThread_${thread.id}`),
           publishedAt: thread.publishedAt,
           updatedAt: thread.updatedAt,
           data: thread,
@@ -85,8 +76,7 @@ export function router(
       try {
         const posts = await patreon.getRecentPosts();
         patreonPosts = posts.map((post) => ({
-          id: generateShortId(`patreon_post_${post.id}`),
-          type: "patreon_post",
+          id: generateShortId(`patreonPost_${post.id}`),
           publishedAt: post.publishedAt,
           updatedAt: post.publishedAt,
           data: post,

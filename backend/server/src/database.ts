@@ -48,8 +48,15 @@ function initFirebaseAdmin() {
   });
 }
 
+const postDataTypeSchema = z.union([
+  z.literal("youtubeVideo"),
+  z.literal("forumThread"),
+  z.literal("patreonPost"),
+]);
+
 const youtubeVideoSchema = z.object({
   id: z.string(),
+  type: postDataTypeSchema,
   title: z.string(),
   url: z.url(),
   publishedAt: z.string(),
@@ -64,6 +71,7 @@ export type YoutubeVideo = z.infer<typeof youtubeVideoSchema>;
 
 const forumThreadSchema = z.object({
   id: z.string(),
+  type: postDataTypeSchema,
   title: z.string(),
   url: z.url(),
   publishedAt: z.string(),
@@ -78,6 +86,7 @@ export type ForumThread = z.infer<typeof forumThreadSchema>;
 
 export const patreonPostSchema = z.object({
   id: z.string(),
+  type: postDataTypeSchema,
   url: z.string(),
   publishedAt: z.string(),
   title: z.string(),
@@ -88,11 +97,6 @@ export const patreonPostSchema = z.object({
 export type PatreonPost = z.infer<typeof patreonPostSchema>;
 
 const postSchema = z.object({
-  type: z.union([
-    z.literal("youtube_video"),
-    z.literal("forum_thread"),
-    z.literal("patreon_post"),
-  ]),
   id: z.string(),
   publishedAt: z.string(),
   updatedAt: z.string(),

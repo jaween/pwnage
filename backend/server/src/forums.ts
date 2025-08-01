@@ -81,6 +81,7 @@ export class Forums {
 
       threads.push({
         id: threadId,
+        type: "forumThread",
         title: entry.title._,
         url: entry.link?.href,
         publishedAt: entry.published,
