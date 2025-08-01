@@ -69,8 +69,9 @@ Future<Either<Error, R>> _makeRequest<T, R>({
     return left('NetworkError');
   } on TimeoutException {
     return left('NetworkError');
-  } catch (e) {
+  } catch (e, s) {
     debugPrint(e.toString());
+    debugPrint(s.toString());
     return left('UnhandledError(${e.toString()})');
   }
 }
@@ -83,6 +84,7 @@ abstract class Post with _$Post {
     required String id,
     @DateTimeConverter() required DateTime publishedAt,
     @DateTimeConverter() required DateTime updatedAt,
+    required String url,
     required PostData data,
   }) = _Post;
 
@@ -97,9 +99,11 @@ abstract class PostData with _$PostData {
     required String title,
     required String url,
     @DateTimeConverter() required DateTime publishedAt,
-    @DateTimeConverter() required DateTime updatedAt,
+    @DateTimeConverter() required DateTime? updatedAt,
     required String thumbnailUrl,
     required String description,
+    required int likes,
+    required int views,
   }) = YoutubeVideo;
 
   const factory PostData.forumThread({
@@ -120,8 +124,8 @@ abstract class PostData with _$PostData {
     required PostDataType type,
     required String url,
     @DateTimeConverter() required DateTime publishedAt,
-    required String teaserText,
-    required String imageUrl,
+    required String? teaserText,
+    required String? imageUrl,
   }) = PatreonPost;
 
   factory PostData.fromJson(Map<String, dynamic> json) =>
