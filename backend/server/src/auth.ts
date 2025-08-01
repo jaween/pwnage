@@ -6,9 +6,9 @@ export class GCPAuthMiddleware {
   private expectedEmail: string;
   private audience: string;
 
-  constructor(projectId: string, region: string, expectedEmail: string) {
+  constructor(projectId: string, expectedEmail: string) {
     this.expectedEmail = expectedEmail;
-    this.audience = `https://${region}-${projectId}.a.run.app`;
+    this.audience = `https://${projectId}-uc.a.run.app`;
   }
 
   middleware = async (req: Request, res: Response, next: NextFunction) => {

@@ -41,7 +41,6 @@ async function init() {
   const database = new Database();
   const gcpAuthMiddleware = new GCPAuthMiddleware(
     projectId,
-    "us-central1",
     serviceAccountEmail
   );
   const atomFeedService = new AtomFeedService();
