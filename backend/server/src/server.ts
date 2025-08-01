@@ -7,9 +7,11 @@ import { Database } from "./database.js";
 import { Patreon } from "./patreon.js";
 import { Youtube } from "./youtube.js";
 import { Forums } from "./forums.js";
+import { GCPAuthMiddleware } from "./auth.js";
 
 async function init() {
   let projectId = process.env.GCP_PROJECT_ID;
+  let serviceAccountEmail = process.env.SERVICE_ACCOUNT ?? "none";
   if (!projectId) {
     const isAvailable = await gcp.isAvailable();
     if (isAvailable) {
@@ -36,6 +38,11 @@ async function init() {
   }
 
   const database = new Database();
+  const gcpAuthMiddleware = new GCPAuthMiddleware(
+    projectId,
+    "us-central1",
+    serviceAccountEmail
+  );
   const youtube = new Youtube(youtubeChannelId);
   const forum = new Forums(forumsAtomUrl);
   const patreon = new Patreon(patreonCampaignId);
@@ -52,7 +59,10 @@ async function init() {
     );
     next();
   });
-  expressApp.use("/v1", router(database, youtube, forum, patreon));
+  expressApp.use(
+    "/v1",
+    router(database, gcpAuthMiddleware, youtube, forum, patreon)
+  );
 
   const port = process.env.PORT || 8080;
   expressApp.listen(port, () => {
