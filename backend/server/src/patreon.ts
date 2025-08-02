@@ -41,6 +41,12 @@ export class Patreon {
             type: "patreonPost",
             url: entry.attributes.url,
             publishedAt: entry.attributes.published_at,
+            author: {
+              name: "teh_pwnage",
+              // TODO: Get image from query
+              avatarUrl:
+                "https://yt3.googleusercontent.com/S9JpZaNNSU3Mnpf1hcThTX9_idWkP80hGWJQq_phybGW_QsPkPkZ_PsVQohBSQkun8iSf_GDFg",
+            },
             title: entry.attributes.title,
             teaserText: entry.attributes.teaser_text ?? null,
             imageUrl: entry.attributes.image?.thumb_url ?? null,

@@ -85,10 +85,20 @@ abstract class Post with _$Post {
     @DateTimeConverter() required DateTime publishedAt,
     @DateTimeConverter() required DateTime updatedAt,
     required String url,
+    required PostAuthor author,
     required PostData data,
   }) = _Post;
 
   factory Post.fromJson(Map<String, dynamic> json) => _$PostFromJson(json);
+}
+
+@freezed
+abstract class PostAuthor with _$PostAuthor {
+  const factory PostAuthor({required String name, required String avatarUrl}) =
+      _PostAuthor;
+
+  factory PostAuthor.fromJson(Map<String, dynamic> json) =>
+      _$PostAuthorFromJson(json);
 }
 
 @Freezed(unionKey: 'type')
@@ -96,26 +106,21 @@ abstract class PostData with _$PostData {
   const factory PostData.youtubeVideo({
     required String id,
     required PostDataType type,
-    required String title,
     required String url,
     @DateTimeConverter() required DateTime publishedAt,
     @DateTimeConverter() required DateTime? updatedAt,
-    required String thumbnailUrl,
+    required String title,
     required String description,
-    required int likes,
-    required int views,
+    required String thumbnailUrl,
   }) = YoutubeVideo;
 
   const factory PostData.forumThread({
     required String id,
     required PostDataType type,
-    required String title,
     required String url,
     @DateTimeConverter() required DateTime publishedAt,
     @DateTimeConverter() required DateTime updatedAt,
-    required String uid,
-    required String author,
-    required String avatarUrl,
+    required String title,
     required String content,
   }) = ForumThread;
 

@@ -35,24 +35,21 @@ export class Youtube {
       let thumbnailUrl = entry["media:group"][0][
         "media:thumbnail"
       ][0].$.url.replace("hqdefault", "maxresdefault");
-
       videos.push({
         id: entry["yt:videoId"][0],
         type: "youtubeVideo",
-        title: entry.title[0],
         url: entry.link[0].$.href,
         publishedAt: entry.published[0],
         updatedAt: entry.updated[0],
-        thumbnailUrl: thumbnailUrl,
+        channel: {
+          name: entry.author[0].name[0],
+          // TODO: Get image from query
+          imageUrl:
+            "https://yt3.googleusercontent.com/S9JpZaNNSU3Mnpf1hcThTX9_idWkP80hGWJQq_phybGW_QsPkPkZ_PsVQohBSQkun8iSf_GDFg",
+        },
+        title: entry.title[0],
         description: entry["media:group"][0]["media:description"][0],
-        likes: Number(
-          entry["media:group"][0]["media:community"][0]["media:starRating"][0].$
-            .count
-        ),
-        views: Number(
-          entry["media:group"][0]["media:community"][0]["media:statistics"][0].$
-            .views
-        ),
+        thumbnailUrl: thumbnailUrl,
       });
     }
 

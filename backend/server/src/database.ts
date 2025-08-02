@@ -51,14 +51,16 @@ function initFirebaseAdmin() {
 const youtubeVideoSchema = z.object({
   id: z.string(),
   type: z.literal("youtubeVideo"),
-  title: z.string(),
   url: z.string(),
   publishedAt: z.string(),
   updatedAt: z.string(),
-  thumbnailUrl: z.string(),
+  channel: z.object({
+    name: z.string(),
+    imageUrl: z.string(),
+  }),
+  title: z.string(),
   description: z.string(),
-  likes: z.int(),
-  views: z.int(),
+  thumbnailUrl: z.string(),
 });
 
 export type YoutubeVideo = z.infer<typeof youtubeVideoSchema>;
@@ -66,13 +68,15 @@ export type YoutubeVideo = z.infer<typeof youtubeVideoSchema>;
 const forumThreadSchema = z.object({
   id: z.string(),
   type: z.literal("forumThread"),
-  title: z.string(),
   url: z.string(),
   publishedAt: z.string(),
   updatedAt: z.string().nullable().optional(),
-  uid: z.string(),
-  author: z.string(),
-  avatarUrl: z.string(),
+  author: z.object({
+    uid: z.string(),
+    name: z.string(),
+    avatarUrl: z.string(),
+  }),
+  title: z.string(),
   content: z.string(),
 });
 
@@ -83,6 +87,10 @@ export const patreonPostSchema = z.object({
   type: z.literal("patreonPost"),
   url: z.string(),
   publishedAt: z.string(),
+  author: z.object({
+    name: z.string(),
+    avatarUrl: z.string(),
+  }),
   title: z.string(),
   teaserText: z.string().nullable().optional(),
   imageUrl: z.string().nullable().optional(),
@@ -95,6 +103,10 @@ const postSchema = z.object({
   publishedAt: z.string(),
   updatedAt: z.string(),
   url: z.string(),
+  author: z.object({
+    name: z.string(),
+    avatarUrl: z.string(),
+  }),
   data: z.discriminatedUnion("type", [
     youtubeVideoSchema,
     forumThreadSchema,

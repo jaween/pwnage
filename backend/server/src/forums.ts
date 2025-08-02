@@ -85,9 +85,11 @@ export class Forums {
         url: entry.link?.href,
         publishedAt: entry.published,
         updatedAt: entry.updated,
-        uid: authorUid,
-        author: authorName,
-        avatarUrl: avatarUrls[authorUid],
+        author: {
+          uid: authorUid,
+          name: authorName,
+          avatarUrl: avatarUrls[authorUid],
+        },
         content: entry.content?._,
       });
     }

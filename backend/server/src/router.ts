@@ -54,6 +54,10 @@ export function router(
           publishedAt: video.publishedAt,
           updatedAt: video.updatedAt,
           url: video.url,
+          author: {
+            name: video.channel.name,
+            avatarUrl: video.channel.imageUrl,
+          },
           data: video,
         }));
       } catch (e) {
@@ -62,26 +66,31 @@ export function router(
 
       let forumPosts: Post[] = [];
       try {
-        const threads = await forum.getRecentThreads();
+        const threads = await forum.getRecentThreads(50);
         forumPosts = threads.map((thread) => ({
           id: generateShortId(`forumThread_${thread.id}`),
           publishedAt: thread.publishedAt,
           updatedAt: thread.updatedAt ?? thread.publishedAt,
           url: thread.url,
+          author: {
+            name: thread.author.name,
+            avatarUrl: thread.author.avatarUrl,
+          },
           data: thread,
         }));
       } catch (e) {
-        console.error("Failed to fetch Patreon threads");
+        console.error("Failed to fetch Forum threads");
       }
 
       let patreonPosts: Post[] = [];
       try {
-        const posts = await patreon.getRecentPosts();
+        const posts = await patreon.getRecentPosts(50);
         patreonPosts = posts.map((post) => ({
           id: generateShortId(`patreonPost_${post.id}`),
           publishedAt: post.publishedAt,
           updatedAt: post.publishedAt,
           url: post.url,
+          author: { name: post.author.name, avatarUrl: post.author.avatarUrl },
           data: post,
         }));
       } catch (e) {
