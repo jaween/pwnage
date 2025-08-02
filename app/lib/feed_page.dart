@@ -5,6 +5,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:pwnage/repositories/posts_repository.dart';
 import 'package:pwnage/services/api_service.dart';
@@ -20,8 +21,30 @@ class FeedPage extends StatelessWidget {
       builder: (context, ref, child) {
         final posts = ref.watch(postsProvider);
         return switch (posts) {
-          AsyncData(:final value) => _Feed(posts: value),
-          AsyncError() => const Center(child: Text('Something went wrong')),
+          AsyncData(:final value) => ColoredBox(
+            color: Colors.black,
+            child: _Feed(posts: value),
+          ),
+          AsyncError() => Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Image.asset('assets/images/jeremy_lol.webp'),
+                const SizedBox(height: 16),
+                Center(
+                  child: Text(
+                    'Something went wrong',
+                    style: TextTheme.of(context).titleLarge,
+                  ),
+                ),
+                const SizedBox(height: 32),
+                OutlinedButton(
+                  onPressed: () => context.goNamed('init'),
+                  child: Text('Reload'),
+                ),
+              ],
+            ),
+          ),
           _ => const Center(child: CircularProgressIndicator()),
         };
       },
@@ -29,87 +52,91 @@ class FeedPage extends StatelessWidget {
   }
 }
 
-class _Feed extends StatelessWidget {
+class _Feed extends StatefulWidget {
   final List<Post> posts;
 
   const _Feed({super.key, required this.posts});
 
   @override
+  State<_Feed> createState() => _FeedState();
+}
+
+class _FeedState extends State<_Feed> {
+  final _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        // Align(
-        //   alignment: Alignment.topCenter,
-        //   child: Image.network(
-        //     'https://scontent-dfw5-1.cdninstagram.com/v/t51.29350-15/514069647_715157874452374_228806038393597263_n.heic?stp=dst-jpg_e35_tt6&efg=eyJ2ZW5jb2RlX3RhZyI6IkNBUk9VU0VMX0lURU0uaW1hZ2VfdXJsZ2VuLjE0NDB4MTE1Mi5zZHIuZjI5MzUwLmRlZmF1bHRfaW1hZ2UuYzIifQ&_nc_ht=scontent-dfw5-1.cdninstagram.com&_nc_cat=110&_nc_oc=Q6cZ2QG-TH5fm4gh0mMxXv81dVcgwpwqHWkBdUuU-iDAEGSaGMAETmiI-WZj3Xwt9dXk5T0&_nc_ohc=Zan_ZUGf-jYQ7kNvwFMvnMf&_nc_gid=Yr75hxyYR1uFK3CXoiucOg&edm=AOmX9WgBAAAA&ccb=7-5&ig_cache_key=MzY2NDM5NTk2NTM1Mzc2NTY1NQ%3D%3D.3-ccb7-5&oh=00_AfSCYn0Tp45RgA4WVZUYPB5qzI38jndWo4MTkXYrwISSkA&oe=6892229D&_nc_sid=bfaa47',
-        //     height: MediaQuery.of(context).size.height * 0.5,
-        //     fit: BoxFit.cover,
-        //   ),
-        // ),
-        Positioned.fill(child: _FeedBackground()),
-        SafeArea(
-          child: Align(
-            alignment: Alignment.topCenter,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'teh pwnage',
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.courierPrimeTextTheme(
-                    TextTheme.of(context),
-                  ).titleLarge?.copyWith(color: Colors.red),
-                ),
-                Text(
-                  'FEED',
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.interTightTextTheme(
-                    TextTheme.of(context),
-                  ).displayLarge,
-                ),
-              ],
+        Align(
+          alignment: Alignment.topCenter,
+          child: Padding(
+            padding: EdgeInsets.only(
+              top: MediaQuery.sizeOf(context).height / 4 - 60,
+            ),
+            child: AnimatedBuilder(
+              animation: _scrollController,
+              builder: (context, child) {
+                final value = !_scrollController.hasClients
+                    ? 1.0
+                    : Curves.easeOutCubic.transform(
+                        (1 - _scrollController.offset / 225).clamp(0.0, 1.0),
+                      );
+                return Transform.translate(
+                  offset: Offset(0, -(1 - value) * 80),
+                  child: Opacity(
+                    opacity: value,
+                    child: _LogoText()
+                        .animate(delay: const Duration(milliseconds: 400))
+                        .scale(
+                          duration: const Duration(milliseconds: 800),
+                          curve: Curves.easeOutQuad,
+                          begin: Offset(1.3, 1.3),
+                          end: Offset(1.0, 1.0),
+                        )
+                        .fadeIn(),
+                  ),
+                );
+              },
             ),
           ),
         ),
         Positioned.fill(
           child: ListView.builder(
+            controller: _scrollController,
             padding:
-                MediaQuery.of(context).padding.copyWith(top: 0) +
+                MediaQuery.paddingOf(context).copyWith(top: 0) +
                 EdgeInsets.only(bottom: 88),
             scrollDirection: Axis.vertical,
-            itemCount: posts.length + 1,
+            itemCount: widget.posts.length + 1,
             itemBuilder: (context, indexPlusOne) {
               if (indexPlusOne == 0) {
-                // return ShaderMask(
-                //   shaderCallback: (bounds) {
-                //     return LinearGradient(
-                //       begin: Alignment.topCenter,
-                //       end: Alignment.bottomCenter,
-                //       colors: [Colors.white, Colors.transparent],
-                //       stops: [0.5, 1.0],
-                //     ).createShader(bounds);
-                //   },
-                //   blendMode: BlendMode.dstOut,
-                //   child: Container(
-                //     color: Colors.black,
-                //     height: MediaQuery.of(context).size.height * 0.5,
-                //   ),
-                // );
                 return ClipPath(
-                  clipper: TopCurveClipper(),
+                  clipper: _TopCurveClipper(),
                   child: Container(
                     height: MediaQuery.of(context).size.height * 0.5,
                   ),
                 );
               }
               final index = indexPlusOne - 1;
-              final post = posts[index];
+              final post = widget.posts[index];
               return _PostContainer(
                 key: ValueKey(post.id),
                 onTap: () => _launch(post.url),
                 useRoundedTopCorners: index == 0,
-                useRoundedBottomCorners: index == posts.length - 1,
-                child: IgnorePointer(child: _PostContents(post: post)),
+                useRoundedBottomCorners: index == widget.posts.length - 1,
+                child: IgnorePointer(
+                  child: _PostContents(
+                    extraTopPadding: index == 0 ? 50 : 0,
+                    post: post,
+                  ),
+                ),
               ).animate().scale(
                 begin: Offset(1.1, 1.1),
                 end: Offset(1, 1),
@@ -118,6 +145,83 @@ class _Feed extends StatelessWidget {
               );
             },
           ),
+        ),
+        Align(
+          alignment: Alignment.center,
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 32.0),
+            child: AnimatedBuilder(
+              animation: _scrollController,
+              builder: (context, child) {
+                final value = (1 - _scrollController.offset / 30).clamp(
+                  0.0,
+                  1.0,
+                );
+                return IgnorePointer(
+                  ignoring: value <= 0.0,
+                  child: Transform.translate(
+                    offset: Offset(0, -(1 - value) * 20),
+                    child: Opacity(
+                      opacity: value,
+                      child: OutlinedButton(
+                        onPressed: () {
+                          showModalBottomSheet(
+                            context: context,
+                            clipBehavior: Clip.hardEdge,
+                            isScrollControlled: true,
+                            builder: (context) {
+                              return ListView(
+                                shrinkWrap: true,
+                                children: [
+                                  CheckboxListTile(
+                                    value: true,
+                                    onChanged: (_) {},
+                                    title: Text('Patreon'),
+                                  ),
+                                  ListTile(title: Text('YouTube')),
+                                  ListTile(title: Text('Forum')),
+                                ],
+                              );
+                            },
+                          );
+                        },
+                        child: Text('Filters'),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _LogoText extends StatelessWidget {
+  const _LogoText({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Image.asset('assets/images/silhouette.webp', height: 60),
+        SizedBox(height: 4),
+        Text(
+          'teh pwnage',
+          textAlign: TextAlign.center,
+          style: GoogleFonts.courierPrimeTextTheme(
+            TextTheme.of(context),
+          ).titleLarge?.copyWith(letterSpacing: 1),
+        ),
+        Text(
+          'FEED',
+          textAlign: TextAlign.center,
+          style: GoogleFonts.interTextTheme(
+            TextTheme.of(context),
+          ).displayLarge?.copyWith(height: 0.8),
         ),
       ],
     );
@@ -232,30 +336,24 @@ class _PostContainer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final topBorderRadius = !useRoundedTopCorners
-        ? BorderRadius.zero
-        : const BorderRadius.only(
-            topLeft: Radius.circular(30),
-            topRight: Radius.circular(30),
-          );
     final bottomBorderRadius = !useRoundedBottomCorners
         ? BorderRadius.zero
         : const BorderRadius.only(
             bottomLeft: Radius.circular(30),
             bottomRight: Radius.circular(30),
           );
-    final borderRadius = topBorderRadius + bottomBorderRadius;
+    final borderRadius = bottomBorderRadius;
     return _AnimatedTap(
       onTap: onTap,
-      child: ClipRRect(
-        clipBehavior: Clip.hardEdge,
-        borderRadius: borderRadius,
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
+      child: ClipPath(
+        clipper: useRoundedTopCorners ? _TopCurveClipper() : _NoneClipper(),
+        child: ClipRRect(
+          clipBehavior: Clip.hardEdge,
+          borderRadius: borderRadius,
           child: Container(
             constraints: BoxConstraints(maxHeight: 600),
             decoration: BoxDecoration(
-              color: Colors.black.withAlpha(50),
+              color: Colors.grey.shade800,
               borderRadius: borderRadius,
             ),
             foregroundDecoration: BoxDecoration(
@@ -287,8 +385,13 @@ String prepareHtml(String html) {
 }
 
 class _PostContents extends StatelessWidget {
+  final double extraTopPadding;
   final Post post;
-  const _PostContents({super.key, required this.post});
+  const _PostContents({
+    super.key,
+    this.extraTopPadding = 0,
+    required this.post,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -357,68 +460,71 @@ class _PostContents extends StatelessWidget {
                   end: Alignment.bottomCenter,
                 ),
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 8),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                    child: _PostSource(
-                      postDataType: data.type,
-                      publishedAt: post.publishedAt,
-                      avatarUrl: post.author.avatarUrl,
-                      authorName: post.author.name,
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: Text(
-                      fields.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style:
-                          GoogleFonts.interTightTextTheme(
-                            TextTheme.of(context),
-                          ).headlineMedium?.copyWith(
-                            shadows: [
-                              Shadow(
-                                color: Colors.black,
-                                blurRadius: 15,
-                                offset: Offset(0, 0),
-                              ),
-                            ],
-                          ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  ConstrainedBox(
-                    constraints: BoxConstraints(maxHeight: 300),
-                    child: Padding(
+              child: Padding(
+                padding: EdgeInsets.only(top: extraTopPadding),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 8),
+                    Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                      child: Html(
-                        data: fields.summary ?? '',
-                        doNotRenderTheseTags: {'hr'},
-                        style: {
-                          'body': Style(
-                            padding: HtmlPaddings.only(bottom: 8),
-                            fontSize: FontSize(14),
-                            fontWeight: FontWeight.w900,
-                            maxLines: 6,
-                            textOverflow: TextOverflow.ellipsis,
-                            textShadow: [
-                              Shadow(
-                                color: Colors.black,
-                                blurRadius: 15,
-                                offset: Offset(0, 0),
-                              ),
-                            ],
-                          ),
-                        },
+                      child: _PostSource(
+                        postDataType: data.type,
+                        publishedAt: post.publishedAt,
+                        avatarUrl: post.author.avatarUrl,
+                        authorName: post.author.name,
                       ),
                     ),
-                  ),
-                ],
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Text(
+                        fields.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style:
+                            GoogleFonts.interTightTextTheme(
+                              TextTheme.of(context),
+                            ).headlineMedium?.copyWith(
+                              shadows: [
+                                Shadow(
+                                  color: Colors.black,
+                                  blurRadius: 15,
+                                  offset: Offset(0, 0),
+                                ),
+                              ],
+                            ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    ConstrainedBox(
+                      constraints: BoxConstraints(maxHeight: 300),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                        child: Html(
+                          data: fields.summary ?? '',
+                          doNotRenderTheseTags: {'hr'},
+                          style: {
+                            'body': Style(
+                              padding: HtmlPaddings.only(bottom: 8),
+                              fontSize: FontSize(14),
+                              fontWeight: FontWeight.w900,
+                              maxLines: 6,
+                              textOverflow: TextOverflow.ellipsis,
+                              textShadow: [
+                                Shadow(
+                                  color: Colors.black,
+                                  blurRadius: 15,
+                                  offset: Offset(0, 0),
+                                ),
+                              ],
+                            ),
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -631,11 +737,11 @@ class _PlatformBadge extends StatelessWidget {
   }
 }
 
-class TopCurveClipper extends CustomClipper<Path> {
+class _TopCurveClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {
     final path = Path();
-    const curveHeight = 80.0;
+    const curveHeight = 50.0;
 
     path.lineTo(0, curveHeight);
     path.quadraticBezierTo(size.width / 2, 0, size.width, curveHeight);
@@ -643,6 +749,17 @@ class TopCurveClipper extends CustomClipper<Path> {
     path.lineTo(0, size.height);
     path.close();
 
+    return path;
+  }
+
+  @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) => true;
+}
+
+class _NoneClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    final path = Path()..addRect(Offset.zero & size);
     return path;
   }
 

@@ -1,19 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:pwnage/repositories/posts_repository.dart';
 
-class InitPage extends StatefulWidget {
+class InitPage extends ConsumerStatefulWidget {
   const InitPage({super.key});
 
   @override
-  State<InitPage> createState() => _InitPageState();
+  ConsumerState<InitPage> createState() => _InitPageState();
 }
 
-class _InitPageState extends State<InitPage> {
+class _InitPageState extends ConsumerState<InitPage> {
   @override
   void initState() {
     super.initState();
     _loadFonts();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    ref.invalidate(postsProvider);
   }
 
   @override
@@ -25,6 +33,7 @@ class _InitPageState extends State<InitPage> {
     await GoogleFonts.pendingFonts([
       GoogleFonts.interTextTheme(),
       GoogleFonts.interTightTextTheme(),
+      GoogleFonts.courierPrimeTextTheme(),
     ]);
     if (mounted) {
       context.goNamed('feed');

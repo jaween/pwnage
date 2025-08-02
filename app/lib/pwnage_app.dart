@@ -12,6 +12,8 @@ import 'package:pwnage/repositories/posts_repository.dart';
 import 'package:pwnage/services/api_service.dart';
 import 'package:pwnage/transition.dart';
 
+const red = Color.fromRGBO(0x99, 0x01, 0x00, 1.0);
+
 class PwnageApp extends StatelessWidget {
   const PwnageApp({super.key});
 
@@ -27,14 +29,32 @@ class PwnageApp extends StatelessWidget {
 
   ThemeData _buildTheme() {
     final baseTheme = ThemeData(
+      scaffoldBackgroundColor: Colors.black,
       colorScheme: ColorScheme.fromSeed(
         brightness: Brightness.dark,
-        seedColor: Colors.red,
+        seedColor: red,
+        primary: red,
+        onPrimaryContainer: Colors.white,
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          minimumSize: Size(32, 40),
+          side: BorderSide(color: red),
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(4)),
+          ),
+        ),
+      ),
+      checkboxTheme: CheckboxThemeData(
+        checkColor: WidgetStatePropertyAll(Colors.white),
       ),
       iconTheme: IconThemeData(color: Colors.white),
     );
     return baseTheme.copyWith(
-      textTheme: GoogleFonts.interTextTheme(baseTheme.textTheme),
+      textTheme: GoogleFonts.interTextTheme(
+        baseTheme.textTheme,
+      ).apply(bodyColor: Colors.white, displayColor: Colors.white),
     );
   }
 }
@@ -88,29 +108,24 @@ class _RouterBuilderState extends State<_RouterBuilder> {
             return TopLevelTransitionPage(child: InitPage());
           },
         ),
-        ShellRoute(
-          builder: (context, state, child) {
+        StatefulShellRoute.indexedStack(
+          builder: (context, state, navigationShell) {
             return Scaffold(
-              body: Stack(
-                children: [
-                  Positioned.fill(child: child),
-                  Positioned(
-                    left: MediaQuery.of(context).padding.left + 16,
-                    right: MediaQuery.of(context).padding.right + 16,
-                    bottom: MediaQuery.of(context).padding.bottom + 8,
-                    child: Center(child: _BottomNavigationBar()),
-                  ),
-                ],
-              ),
+              body: Stack(children: [Positioned.fill(child: navigationShell)]),
             );
           },
-          routes: [
-            GoRoute(
-              path: '/feed',
-              name: 'feed',
-              pageBuilder: (context, state) {
-                return TopLevelTransitionPage(child: FeedPage());
-              },
+          branches: [
+            StatefulShellBranch(
+              preload: true,
+              routes: [
+                GoRoute(
+                  path: '/feed',
+                  name: 'feed',
+                  pageBuilder: (context, state) {
+                    return TopLevelTransitionPage(child: FeedPage());
+                  },
+                ),
+              ],
             ),
           ],
         ),
@@ -120,7 +135,13 @@ class _RouterBuilderState extends State<_RouterBuilder> {
 }
 
 class _BottomNavigationBar extends StatelessWidget {
-  const _BottomNavigationBar({super.key});
+  final int index;
+  final void Function(int index) onNavigate;
+  const _BottomNavigationBar({
+    super.key,
+    required this.index,
+    required this.onNavigate,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -133,7 +154,7 @@ class _BottomNavigationBar extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 20),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.all(Radius.circular(64)),
-            color: Colors.white.withAlpha(50),
+            color: Colors.white.withAlpha(100),
           ),
           foregroundDecoration: BoxDecoration(
             borderRadius: BorderRadius.all(Radius.circular(64)),
@@ -145,8 +166,14 @@ class _BottomNavigationBar extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               spacing: 40,
               children: [
-                IconButton(onPressed: () {}, icon: Icon(Icons.rss_feed)),
-                IconButton(onPressed: () {}, icon: Icon(Icons.store)),
+                IconButton(
+                  onPressed: () => onNavigate(0),
+                  icon: Icon(Icons.rss_feed, color: index == 0 ? red : null),
+                ),
+                IconButton(
+                  onPressed: () => onNavigate(1),
+                  icon: Icon(Icons.store, color: index == 1 ? red : null),
+                ),
                 IconButton(onPressed: () {}, icon: Icon(Icons.abc)),
               ],
             ),

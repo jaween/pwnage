@@ -41,3 +41,5 @@ flutter:
   assets:
     - assets/icons/patreon_logo.svg
     - assets/icons/youtube_logo.svg
+    - assets/images/jeremy_lol.webp
+    - assets/images/silhouette.webp
