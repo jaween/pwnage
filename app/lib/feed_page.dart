@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -46,6 +47,30 @@ class _Feed extends StatelessWidget {
         //   ),
         // ),
         Positioned.fill(child: _FeedBackground()),
+        SafeArea(
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'teh pwnage',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.courierPrimeTextTheme(
+                    TextTheme.of(context),
+                  ).titleLarge?.copyWith(color: Colors.red),
+                ),
+                Text(
+                  'FEED',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.interTightTextTheme(
+                    TextTheme.of(context),
+                  ).displayLarge,
+                ),
+              ],
+            ),
+          ),
+        ),
         Positioned.fill(
           child: ListView.builder(
             padding:
@@ -79,15 +104,17 @@ class _Feed extends StatelessWidget {
               }
               final index = indexPlusOne - 1;
               final post = posts[index];
-              return Padding(
-                padding: const EdgeInsets.symmetric(
-                  vertical: 8,
-                  horizontal: 16,
-                ),
-                child: _PostContainer(
-                  onTap: () => _launch(post.url),
-                  child: IgnorePointer(child: _PostContents(post: post)),
-                ),
+              return _PostContainer(
+                key: ValueKey(post.id),
+                onTap: () => _launch(post.url),
+                useRoundedTopCorners: index == 0,
+                useRoundedBottomCorners: index == posts.length - 1,
+                child: IgnorePointer(child: _PostContents(post: post)),
+              ).animate().scale(
+                begin: Offset(1.1, 1.1),
+                end: Offset(1, 1),
+                curve: Curves.easeOutQuad,
+                duration: const Duration(milliseconds: 300),
               );
             },
           ),
@@ -121,15 +148,104 @@ class _FeedBackgroundState extends State<_FeedBackground> {
   }
 }
 
-class _PostContainer extends StatelessWidget {
-  final VoidCallback onTap;
+class _AnimatedTap extends StatefulWidget {
+  final void Function() onTap;
   final Widget child;
-  const _PostContainer({super.key, required this.onTap, required this.child});
+
+  const _AnimatedTap({super.key, required this.onTap, required this.child});
+
+  @override
+  State<_AnimatedTap> createState() => _AnimatedTapState();
+}
+
+class _AnimatedTapState extends State<_AnimatedTap>
+    with SingleTickerProviderStateMixin {
+  late final _animationController = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 200),
+  );
+
+  Alignment _alignment = Alignment.center;
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    const borderRadius = BorderRadius.all(Radius.circular(24));
+    final curvedAnimation = CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeOutQuad,
+    );
     return GestureDetector(
+      onTapDown: (details) {
+        final size = context.size ?? const Size(1, 1);
+        final x = details.localPosition.dx / size.width;
+        final y = details.localPosition.dy / size.height;
+        setState(() => _alignment = Alignment(x * 2 - 1, y * 2 - 1));
+        _animationController.forward(from: 0.0);
+      },
+      onTapCancel: _animationController.reverse,
+      onTapUp: (_) {
+        _animationController.reverse();
+        widget.onTap();
+      },
+      child: AnimatedBuilder(
+        animation: curvedAnimation,
+        builder: (context, child) {
+          return Container(
+                clipBehavior: Clip.hardEdge,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.all(
+                    Radius.circular(curvedAnimation.value * 24),
+                  ),
+                ),
+                child: widget.child,
+              )
+              .animate(controller: _animationController, autoPlay: false)
+              .scale(
+                begin: Offset(1.0, 1.0),
+                end: Offset(0.95, 0.95),
+                curve: Curves.easeOutQuad,
+                alignment: _alignment,
+              );
+        },
+      ),
+    );
+  }
+}
+
+class _PostContainer extends StatelessWidget {
+  final VoidCallback onTap;
+  final bool useRoundedTopCorners;
+  final bool useRoundedBottomCorners;
+  final Widget child;
+  const _PostContainer({
+    super.key,
+    required this.onTap,
+    this.useRoundedTopCorners = false,
+    this.useRoundedBottomCorners = false,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final topBorderRadius = !useRoundedTopCorners
+        ? BorderRadius.zero
+        : const BorderRadius.only(
+            topLeft: Radius.circular(30),
+            topRight: Radius.circular(30),
+          );
+    final bottomBorderRadius = !useRoundedBottomCorners
+        ? BorderRadius.zero
+        : const BorderRadius.only(
+            bottomLeft: Radius.circular(30),
+            bottomRight: Radius.circular(30),
+          );
+    final borderRadius = topBorderRadius + bottomBorderRadius;
+    return _AnimatedTap(
       onTap: onTap,
       child: ClipRRect(
         clipBehavior: Clip.hardEdge,
@@ -144,7 +260,9 @@ class _PostContainer extends StatelessWidget {
             ),
             foregroundDecoration: BoxDecoration(
               borderRadius: borderRadius,
-              border: Border.all(color: Colors.white.withAlpha(50)),
+              border: Border(
+                top: BorderSide(color: Colors.white.withAlpha(50)),
+              ),
             ),
             child: child,
           ),
@@ -280,12 +398,13 @@ class _PostContents extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 8.0),
                       child: Html(
                         data: fields.summary ?? '',
+                        doNotRenderTheseTags: {'hr'},
                         style: {
                           'body': Style(
                             padding: HtmlPaddings.only(bottom: 8),
                             fontSize: FontSize(14),
                             fontWeight: FontWeight.w900,
-                            maxLines: 4,
+                            maxLines: 6,
                             textOverflow: TextOverflow.ellipsis,
                             textShadow: [
                               Shadow(
