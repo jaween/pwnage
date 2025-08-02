@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -29,6 +31,7 @@ class PwnageApp extends StatelessWidget {
         brightness: Brightness.dark,
         seedColor: Colors.red,
       ),
+      iconTheme: IconThemeData(color: Colors.white),
     );
     return baseTheme.copyWith(
       textTheme: GoogleFonts.interTextTheme(baseTheme.textTheme),
@@ -85,12 +88,69 @@ class _RouterBuilderState extends State<_RouterBuilder> {
             return TopLevelTransitionPage(child: InitPage());
           },
         ),
-        GoRoute(
-          path: '/feed',
-          name: 'feed',
-          pageBuilder: (context, state) {
-            return TopLevelTransitionPage(child: FeedPage());
+        ShellRoute(
+          builder: (context, state, child) {
+            return Scaffold(
+              body: Stack(
+                children: [
+                  Positioned.fill(child: child),
+                  Positioned(
+                    left: MediaQuery.of(context).padding.left + 16,
+                    right: MediaQuery.of(context).padding.right + 16,
+                    bottom: MediaQuery.of(context).padding.bottom + 8,
+                    child: Center(child: _BottomNavigationBar()),
+                  ),
+                ],
+              ),
+            );
           },
+          routes: [
+            GoRoute(
+              path: '/feed',
+              name: 'feed',
+              pageBuilder: (context, state) {
+                return TopLevelTransitionPage(child: FeedPage());
+              },
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _BottomNavigationBar extends StatelessWidget {
+  const _BottomNavigationBar({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Container(
+          height: 70,
+          clipBehavior: Clip.hardEdge,
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.all(Radius.circular(64)),
+            color: Colors.white.withAlpha(50),
+          ),
+          foregroundDecoration: BoxDecoration(
+            borderRadius: BorderRadius.all(Radius.circular(64)),
+            border: Border.all(color: Colors.white.withAlpha(20)),
+          ),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 60, sigmaY: 60),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              spacing: 40,
+              children: [
+                IconButton(onPressed: () {}, icon: Icon(Icons.rss_feed)),
+                IconButton(onPressed: () {}, icon: Icon(Icons.store)),
+                IconButton(onPressed: () {}, icon: Icon(Icons.abc)),
+              ],
+            ),
+          ),
         ),
       ],
     );

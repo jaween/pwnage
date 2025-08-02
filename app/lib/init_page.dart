@@ -22,7 +22,10 @@ class _InitPageState extends State<InitPage> {
   }
 
   void _loadFonts() async {
-    await GoogleFonts.pendingFonts();
+    await GoogleFonts.pendingFonts([
+      GoogleFonts.interTextTheme(),
+      GoogleFonts.interTightTextTheme(),
+    ]);
     if (mounted) {
       context.goNamed('feed');
     }
