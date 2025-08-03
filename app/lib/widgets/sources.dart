@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:pwnage/pwnage_app.dart';
 import 'package:pwnage/services/api_service.dart';
 
-class SourcesButton extends ConsumerWidget {
+class SourcesButton extends StatelessWidget {
   final Set<PostDataType> filter;
   final void Function(Set<PostDataType> filter) onUpdateFilter;
 
@@ -14,23 +15,31 @@ class SourcesButton extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     return Consumer(
       builder: (context, ref, child) {
-        return OutlinedButton(
-          onPressed: () => _showFilterModal(context, ref),
-          child: Text('Sources'),
+        return Hero(
+          tag: 'hero-tag',
+          createRectTween: (begin, end) => RectTween(begin: begin, end: end),
+          child: OutlinedButton(
+            onPressed: () => _showFilterModal(context, ref),
+            child: Text('SOURCES'),
+          ),
         );
       },
     );
   }
 
   void _showFilterModal(BuildContext context, WidgetRef ref) async {
-    final newFilter = await showModalBottomSheet<Set<PostDataType>>(
-      context: context,
-      clipBehavior: Clip.hardEdge,
-      isScrollControlled: false,
-      builder: (context) => _FilterSheet(filter: Set.of(filter)),
+    final newFilter = await Navigator.of(context).push<Set<PostDataType>>(
+      PageRouteBuilder(
+        opaque: false,
+        barrierColor: Colors.black87,
+        barrierDismissible: true,
+        // transitionDuration: Duration(milliseconds: 800),
+        // reverseTransitionDuration: Duration(milliseconds: 800),
+        pageBuilder: (_, __, ___) => _FilterSheet(filter: filter),
+      ),
     );
     if (context.mounted && newFilter != null) {
       onUpdateFilter(newFilter);
@@ -60,40 +69,83 @@ class _FilterSheetState extends State<_FilterSheet> {
         }
         return;
       },
-      child: ListView(
-        shrinkWrap: true,
-        children: [
-          const SizedBox(height: 16),
-          Center(
-            child: Text(
-              'Sources of Pwnage',
-              style: TextTheme.of(context).bodyLarge,
-            ),
+      child: _FilterSheetHero(
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadiusGeometry.all(Radius.circular(8)),
+            border: Border.all(color: red),
+            color: Colors.black,
           ),
-          const SizedBox(height: 16),
-          for (final type in PostDataType.values)
-            CheckboxListTile(
-              value: _filter.contains(type),
-              enabled: !_filter.contains(type) || _filter.length > 1,
-              onChanged: (value) {
-                setState(
-                  () =>
-                      value == true ? _filter.add(type) : _filter.remove(type),
-                );
-              },
-              title: Row(
+          child: Material(
+            type: MaterialType.transparency,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  SizedBox.square(
-                    dimension: 16,
-                    child: _SourceIcon(type: type, color: Colors.white),
+                  const SizedBox(height: 16),
+                  Center(
+                    child: Text(
+                      'SOURCES OF PWNAGE',
+                      style: TextTheme.of(context).headlineSmall,
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                    ),
                   ),
-                  const SizedBox(width: 16),
-                  Text(type.label),
+                  const SizedBox(height: 16),
+                  for (final type in PostDataType.values)
+                    Builder(
+                      builder: (context) {
+                        final value = _filter.contains(type);
+                        final enabled =
+                            !_filter.contains(type) || _filter.length > 1;
+                        return ListTile(
+                          enabled: enabled,
+                          onTap: () => setState(
+                            () => !value
+                                ? _filter.add(type)
+                                : _filter.remove(type),
+                          ),
+                          leading: SizedBox.square(
+                            dimension: 16,
+                            child: _SourceIcon(
+                              type: type,
+                              color: enabled
+                                  ? Colors.white
+                                  : Theme.of(context).disabledColor,
+                            ),
+                          ),
+                          title: Text(type.label),
+                          trailing: value
+                              ? Icon(Icons.check)
+                              : const SizedBox.shrink(),
+                        );
+                      },
+                    ),
                 ],
               ),
             ),
-          const SizedBox(height: 40),
-        ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FilterSheetHero extends StatelessWidget {
+  final Widget child;
+
+  const _FilterSheetHero({super.key, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.only(left: 16, right: 16, top: 154),
+        child: Hero(
+          tag: 'hero-tag',
+          createRectTween: (begin, end) => RectTween(begin: begin, end: end),
+          child: child,
+        ),
       ),
     );
   }

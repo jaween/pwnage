@@ -38,9 +38,11 @@ class PwnageApp extends StatelessWidget {
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          minimumSize: Size(32, 40),
+          minimumSize: Size(32, 48),
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           side: BorderSide(color: red),
           foregroundColor: Colors.white,
+          backgroundColor: Colors.black,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.all(Radius.circular(4)),
           ),

@@ -41,7 +41,7 @@ class PostContainer extends StatelessWidget {
           child: Container(
             constraints: BoxConstraints(maxHeight: 600),
             decoration: BoxDecoration(
-              color: Colors.grey.shade800,
+              color: Colors.grey.shade900,
               borderRadius: borderRadius,
             ),
             foregroundDecoration: BoxDecoration(
