@@ -30,11 +30,19 @@ class ApiService {
     _client.close();
   }
 
-  Future<Either<Error, List<Post>>> getPosts({DateTime? from, int limit = 10}) {
-    final fromQuery = (from ?? DateTime.now()).toIso8601String();
+  Future<Either<Error, List<Post>>> getPosts({
+    DateTime? from,
+    int limit = 10,
+    Set<PostDataType>? filter,
+  }) {
+    final queryParams = [
+      'from=${(from ?? DateTime.now()).toIso8601String()}',
+      'limit=$limit',
+      if (filter != null) 'filter=${filter.map((f) => f.queryKey).join(',')}',
+    ].join('&');
     return _makeRequest(
       request: () => _client.get(
-        Uri.parse('$baseUrl/v1/posts?$fromQuery&limit=$limit'),
+        Uri.parse('$baseUrl/v1/posts?$queryParams'),
         headers: _headers,
       ),
       handleResponse: (response) {
@@ -76,7 +84,16 @@ Future<Either<Error, R>> _makeRequest<T, R>({
   }
 }
 
-enum PostDataType { youtubeVideo, forumThread, patreonPost }
+enum PostDataType {
+  youtubeVideo(queryKey: 'youtube', label: 'YouTube'),
+  forumThread(queryKey: 'forum', label: 'Forum'),
+  patreonPost(queryKey: 'patreon', label: 'Patreon');
+
+  final String queryKey;
+  final String label;
+
+  const PostDataType({required this.queryKey, required this.label});
+}
 
 @freezed
 abstract class Post with _$Post {

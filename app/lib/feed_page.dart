@@ -12,43 +12,76 @@ import 'package:pwnage/services/api_service.dart';
 import 'package:pwnage/util.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class FeedPage extends StatelessWidget {
+class FeedPage extends ConsumerStatefulWidget {
   const FeedPage({super.key});
 
   @override
+  ConsumerState<FeedPage> createState() => _FeedPageState();
+}
+
+class _FeedPageState extends ConsumerState<FeedPage> {
+  List<Post>? _posts;
+
+  @override
+  void initState() {
+    super.initState();
+    ref.listenManual(postsProvider, (prev, next) {
+      final value = next.valueOrNull;
+      if (value != null) {
+        setState(() => _posts = value);
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Consumer(
-      builder: (context, ref, child) {
-        final posts = ref.watch(postsProvider);
-        return switch (posts) {
-          AsyncData(:final value) => ColoredBox(
-            color: Colors.black,
-            child: _Feed(posts: value),
-          ),
-          AsyncError() => Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Image.asset('assets/images/jeremy_lol.webp'),
-                const SizedBox(height: 16),
-                Center(
-                  child: Text(
-                    'Something went wrong',
-                    style: TextTheme.of(context).titleLarge,
-                  ),
+    // Uses cached state so we don't show reload on filter change
+    final cachedPosts = _posts;
+    if (cachedPosts != null) {
+      return _Feed(posts: cachedPosts);
+    }
+
+    final posts = ref.watch(postsProvider);
+    return switch (posts) {
+      AsyncData() => ColoredBox(
+        color: Colors.black,
+        // Should not be possible to reach this
+        child: const SizedBox.shrink(),
+      ),
+      AsyncError() => Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Image.asset('assets/images/jeremy_lol.webp')
+                .animate(onPlay: (controller) => controller.repeat())
+                .moveY(
+                  begin: -6,
+                  end: 6,
+                  duration: const Duration(milliseconds: 200),
+                )
+                .then()
+                .moveY(
+                  begin: 6,
+                  end: -6,
+                  duration: const Duration(milliseconds: 200),
                 ),
-                const SizedBox(height: 32),
-                OutlinedButton(
-                  onPressed: () => context.goNamed('init'),
-                  child: Text('Reload'),
-                ),
-              ],
+            const SizedBox(height: 16),
+            Center(
+              child: Text(
+                'Something went wrong',
+                style: TextTheme.of(context).titleLarge,
+              ),
             ),
-          ),
-          _ => const Center(child: CircularProgressIndicator()),
-        };
-      },
-    );
+            const SizedBox(height: 32),
+            OutlinedButton(
+              onPressed: () => context.goNamed('init'),
+              child: Text('Reload'),
+            ),
+          ],
+        ),
+      ),
+      _ => const Center(child: CircularProgressIndicator()),
+    };
   }
 }
 
@@ -163,29 +196,13 @@ class _FeedState extends State<_Feed> {
                     offset: Offset(0, -(1 - value) * 20),
                     child: Opacity(
                       opacity: value,
-                      child: OutlinedButton(
-                        onPressed: () {
-                          showModalBottomSheet(
-                            context: context,
-                            clipBehavior: Clip.hardEdge,
-                            isScrollControlled: true,
-                            builder: (context) {
-                              return ListView(
-                                shrinkWrap: true,
-                                children: [
-                                  CheckboxListTile(
-                                    value: true,
-                                    onChanged: (_) {},
-                                    title: Text('Patreon'),
-                                  ),
-                                  ListTile(title: Text('YouTube')),
-                                  ListTile(title: Text('Forum')),
-                                ],
-                              );
-                            },
+                      child: Consumer(
+                        builder: (context, ref, child) {
+                          return OutlinedButton(
+                            onPressed: () => _showFilterModal(context, ref),
+                            child: Text('Sources'),
                           );
                         },
-                        child: Text('Filters'),
                       ),
                     ),
                   ),
@@ -195,6 +212,83 @@ class _FeedState extends State<_Feed> {
           ),
         ),
       ],
+    );
+  }
+
+  void _showFilterModal(BuildContext context, WidgetRef ref) async {
+    final newFilter = await showModalBottomSheet<Set<PostDataType>>(
+      context: context,
+      clipBehavior: Clip.hardEdge,
+      isScrollControlled: false,
+      builder: (context) => _FilterSheet(),
+    );
+    if (context.mounted && newFilter != null) {
+      ref.read(postFilterProvider.notifier).filter = newFilter;
+    }
+  }
+}
+
+class _FilterSheet extends ConsumerStatefulWidget {
+  const _FilterSheet({super.key});
+
+  @override
+  ConsumerState<_FilterSheet> createState() => _FilterSheetState();
+}
+
+class _FilterSheetState extends ConsumerState<_FilterSheet> {
+  late Set<PostDataType> _filter;
+
+  @override
+  void initState() {
+    super.initState();
+    _filter = Set.of(ref.read(postFilterProvider));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          Navigator.of(context).pop(_filter);
+        }
+        return;
+      },
+      child: ListView(
+        shrinkWrap: true,
+        children: [
+          const SizedBox(height: 16),
+          Center(
+            child: Text(
+              'Sources of Pwnage',
+              style: TextTheme.of(context).bodyLarge,
+            ),
+          ),
+          const SizedBox(height: 16),
+          for (final type in PostDataType.values)
+            CheckboxListTile(
+              value: _filter.contains(type),
+              enabled: !_filter.contains(type) || _filter.length > 1,
+              onChanged: (value) {
+                setState(
+                  () =>
+                      value == true ? _filter.add(type) : _filter.remove(type),
+                );
+              },
+              title: Row(
+                children: [
+                  SizedBox.square(
+                    dimension: 16,
+                    child: _PlatformIcon(type: type, color: Colors.white),
+                  ),
+                  const SizedBox(width: 16),
+                  Text(type.label),
+                ],
+              ),
+            ),
+          const SizedBox(height: 40),
+        ],
+      ),
     );
   }
 }
@@ -707,24 +801,7 @@ class _PlatformBadge extends StatelessWidget {
       child: Row(
         children: [
           const SizedBox(width: 8),
-          SizedBox.square(
-            dimension: 16,
-            child: switch (type) {
-              PostDataType.youtubeVideo => SvgPicture.asset(
-                'assets/icons/youtube_logo.svg',
-                colorFilter: ColorFilter.mode(Colors.white54, BlendMode.srcIn),
-              ),
-              PostDataType.forumThread => Icon(
-                Icons.forum,
-                size: 20,
-                color: Colors.white54,
-              ),
-              PostDataType.patreonPost => SvgPicture.asset(
-                'assets/icons/patreon_logo.svg',
-                colorFilter: ColorFilter.mode(Colors.white54, BlendMode.srcIn),
-              ),
-            },
-          ),
+          SizedBox.square(dimension: 16, child: _PlatformIcon(type: type)),
           const SizedBox(width: 12),
           Text(switch (type) {
             PostDataType.youtubeVideo => 'YouTube',
@@ -734,6 +811,32 @@ class _PlatformBadge extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+class _PlatformIcon extends StatelessWidget {
+  final PostDataType type;
+  final Color color;
+
+  const _PlatformIcon({
+    super.key,
+    required this.type,
+    this.color = Colors.white54,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return switch (type) {
+      PostDataType.youtubeVideo => SvgPicture.asset(
+        'assets/icons/youtube_logo.svg',
+        colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
+      ),
+      PostDataType.forumThread => Icon(Icons.forum, size: 20, color: color),
+      PostDataType.patreonPost => SvgPicture.asset(
+        'assets/icons/patreon_logo.svg',
+        colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
+      ),
+    };
   }
 }
 
