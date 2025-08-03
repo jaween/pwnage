@@ -22,7 +22,7 @@ class ApiService {
   late final http.Client _client;
 
   ApiService({required this.baseUrl})
-    : _headers = {'content-type': 'application/json'} {
+    : _headers = {'accept': 'application/json'} {
     _client = http.Client();
   }
 

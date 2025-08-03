@@ -38,11 +38,11 @@ export function router(
     }
 
     const accept = req.headers.accept || "";
-    if (accept.includes("application/atom+xml")) {
+    if (accept.includes("application/json")) {
+      res.json({ posts: posts, hasMore: posts.length >= limit });
+    } else {
       const feedXml = atomFeedService.buildXml(posts, new Date());
       res.type("application/atom+xml").send(feedXml);
-    } else {
-      res.json({ posts: posts, hasMore: posts.length >= limit });
     }
   });
 
