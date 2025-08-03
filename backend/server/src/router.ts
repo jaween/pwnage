@@ -133,10 +133,14 @@ const filterParamSchema = z
 type FilterType = (typeof filterMap)[keyof typeof filterMap];
 
 export function parseFilterParam(param: string | undefined): FilterType[] {
-  if (!param) return [];
+  if (!param) {
+    return Object.values(filterMap);
+  }
 
   const parsed = filterParamSchema.safeParse(param);
-  if (!parsed.success) return [];
+  if (!parsed.success) {
+    return Object.values(filterMap);
+  }
 
   return parsed.data.map((key) => filterMap[key]);
 }
