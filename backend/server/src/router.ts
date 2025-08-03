@@ -19,18 +19,19 @@ export function router(
   const router = Router();
 
   router.get("/posts", async (req, res) => {
-    const fromQuery = req.query.from;
+    const beforeQuery = req.query.before;
     const limitQuery = req.query.limit;
     const filterQuery = req.query.filter as string | undefined;
 
-    const from =
-      typeof fromQuery === "string" ? fromQuery : new Date().toISOString();
-    const limit = Number(limitQuery) > 0 ? Number(limitQuery) : 10;
+    const before =
+      typeof beforeQuery === "string" ? beforeQuery : new Date().toISOString();
+    let limit = Number(limitQuery);
+    limit = limit > 0 && limit < 30 ? Number(limitQuery) : 10;
     const filter = parseFilterParam(filterQuery);
 
     let posts: Post[];
     try {
-      posts = await database.getPostsBefore(from, limit, filter);
+      posts = await database.getPostsBefore(before, limit, filter);
     } catch (e) {
       console.error("Failed to fetch Posts");
       return res.sendStatus(500);
@@ -41,7 +42,7 @@ export function router(
       const feedXml = atomFeedService.buildXml(posts, new Date());
       res.type("application/atom+xml").send(feedXml);
     } else {
-      res.json({ posts: posts });
+      res.json({ posts: posts, hasMore: posts.length >= limit });
     }
   });
 

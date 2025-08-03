@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -28,7 +29,7 @@ class _FeedPageState extends ConsumerState<FeedPage> {
     ref.listenManual(postsProvider, (prev, next) {
       final value = next.valueOrNull;
       if (value != null) {
-        setState(() => _posts = value);
+        setState(() => _posts = value.posts);
       }
     });
   }
@@ -85,17 +86,23 @@ class _FeedPageState extends ConsumerState<FeedPage> {
   }
 }
 
-class _Feed extends StatefulWidget {
+class _Feed extends ConsumerStatefulWidget {
   final List<Post> posts;
 
   const _Feed({super.key, required this.posts});
 
   @override
-  State<_Feed> createState() => _FeedState();
+  ConsumerState<_Feed> createState() => _FeedState();
 }
 
-class _FeedState extends State<_Feed> {
+class _FeedState extends ConsumerState<_Feed> {
   final _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
 
   @override
   void dispose() {
@@ -213,6 +220,18 @@ class _FeedState extends State<_Feed> {
         ),
       ],
     );
+  }
+
+  void _onScroll() {
+    final scroll = _scrollController.position;
+    final isLoadingMore =
+        ref.read(postsProvider).valueOrNull?.isLoadingMore == true;
+    const distanceFromBottom = 1500;
+    if (!isLoadingMore &&
+        scroll.userScrollDirection == ScrollDirection.reverse &&
+        scroll.pixels >= scroll.maxScrollExtent - distanceFromBottom) {
+      ref.read(postsProvider.notifier).loadMore();
+    }
   }
 
   void _showFilterModal(BuildContext context, WidgetRef ref) async {

@@ -30,13 +30,13 @@ class ApiService {
     _client.close();
   }
 
-  Future<Either<Error, List<Post>>> getPosts({
-    DateTime? from,
+  Future<Either<Error, PostResponse>> getPosts({
+    DateTime? before,
     int limit = 10,
     Set<PostDataType>? filter,
   }) {
     final queryParams = [
-      'from=${(from ?? DateTime.now()).toIso8601String()}',
+      'before=${(before ?? DateTime.now()).toIso8601String()}',
       'limit=$limit',
       if (filter != null) 'filter=${filter.map((f) => f.queryKey).join(',')}',
     ].join('&');
@@ -47,8 +47,7 @@ class ApiService {
       ),
       handleResponse: (response) {
         final body = jsonDecode(response.body) as Map<String, dynamic>;
-        final list = body['posts'] as List;
-        return right(list.map((e) => Post.fromJson(e)).toList());
+        return right(PostResponse.fromJson(body));
       },
     );
   }
@@ -82,6 +81,17 @@ Future<Either<Error, R>> _makeRequest<T, R>({
     debugPrint(s.toString());
     return left('UnhandledError(${e.toString()})');
   }
+}
+
+@freezed
+abstract class PostResponse with _$PostResponse {
+  const factory PostResponse({
+    required List<Post> posts,
+    required bool hasMore,
+  }) = _PostResponse;
+
+  factory PostResponse.fromJson(Map<String, dynamic> json) =>
+      _$PostResponseFromJson(json);
 }
 
 enum PostDataType {
