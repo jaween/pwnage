@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:pwnage/pwnage_app.dart';
 
 class Logo extends StatelessWidget {
   const Logo({super.key});
@@ -26,6 +27,20 @@ class Logo extends StatelessWidget {
           ).displayLarge?.copyWith(height: 0.8),
         ),
       ],
+    );
+  }
+}
+
+class PwnageImminentText extends StatelessWidget {
+  const PwnageImminentText({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      'pwnage imminent',
+      style: GoogleFonts.courierPrimeTextTheme(
+        TextTheme.of(context),
+      ).titleLarge?.copyWith(letterSpacing: 1, color: red),
     );
   }
 }

@@ -6,13 +6,15 @@ import 'package:flutter_html/flutter_html.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:pwnage/services/api_service.dart';
 import 'package:pwnage/util.dart';
+import 'package:pwnage/widgets/image.dart';
 import 'package:pwnage/widgets/sources.dart';
 
 class PostContainer extends StatelessWidget {
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final bool isFirst;
   final bool isLast;
   final Widget child;
+
   const PostContainer({
     super.key,
     required this.onTap,
@@ -84,7 +86,7 @@ class PostContents extends StatelessWidget {
                   // Normal image
                   Transform.scale(
                     scale: 1.05,
-                    child: Image.network(image, fit: BoxFit.cover),
+                    child: FadeInNetworkImage(image, fit: BoxFit.cover),
                   ),
                   // Image that starts blurred and gradually unblurs
                   ShaderMask(
@@ -102,7 +104,7 @@ class PostContents extends StatelessWidget {
                       // Scaling image to deal with edges looking bad when blurred
                       child: Transform.scale(
                         scale: 1.05,
-                        child: Image.network(image, fit: BoxFit.cover),
+                        child: FadeInNetworkImage(image, fit: BoxFit.cover),
                       ),
                     ),
                   ),
@@ -195,7 +197,7 @@ class PostContents extends StatelessWidget {
 }
 
 class _AnimatedTap extends StatefulWidget {
-  final void Function() onTap;
+  final void Function()? onTap;
   final Widget child;
 
   const _AnimatedTap({super.key, required this.onTap, required this.child});
@@ -226,18 +228,22 @@ class _AnimatedTapState extends State<_AnimatedTap>
       curve: Curves.easeOutQuad,
     );
     return GestureDetector(
-      onTapDown: (details) {
-        final size = context.size ?? const Size(1, 1);
-        final x = details.localPosition.dx / size.width;
-        final y = details.localPosition.dy / size.height;
-        setState(() => _alignment = Alignment(x * 2 - 1, y * 2 - 1));
-        _animationController.forward(from: 0.0);
-      },
-      onTapCancel: _animationController.reverse,
-      onTapUp: (_) {
-        _animationController.reverse();
-        widget.onTap();
-      },
+      onTapDown: widget.onTap == null
+          ? null
+          : (details) {
+              final size = context.size ?? const Size(1, 1);
+              final x = details.localPosition.dx / size.width;
+              final y = details.localPosition.dy / size.height;
+              setState(() => _alignment = Alignment(x * 2 - 1, y * 2 - 1));
+              _animationController.forward(from: 0.0);
+            },
+      onTapCancel: widget.onTap == null ? null : _animationController.reverse,
+      onTapUp: widget.onTap == null
+          ? null
+          : (_) {
+              _animationController.reverse();
+              widget.onTap?.call();
+            },
       child: AnimatedBuilder(
         animation: curvedAnimation,
         builder: (context, child) {
