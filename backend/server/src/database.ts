@@ -20,10 +20,15 @@ export class Database {
     await batch.commit();
   }
 
-  async getPostsBefore(publishedAt: string, limit: number): Promise<Post[]> {
+  async getPostsBefore(
+    publishedAt: string,
+    limit: number,
+    filter: FilterType[]
+  ): Promise<Post[]> {
     const snapshot = await this.firestore
       .collection("posts")
       .where("publishedAt", "<", publishedAt)
+      .where("data.type", "in", filter)
       .orderBy("publishedAt", "desc")
       .limit(limit)
       .get();
@@ -115,3 +120,11 @@ const postSchema = z.object({
 });
 
 export type Post = z.infer<typeof postSchema>;
+
+const filterTypeSchema = z.union([
+  z.literal("patreonPost"),
+  z.literal("youtubeVideo"),
+  z.literal("forumThread"),
+]);
+
+type FilterType = z.infer<typeof filterTypeSchema>;

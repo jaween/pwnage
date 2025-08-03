@@ -6,6 +6,7 @@ import { Youtube } from "./youtube.js";
 import { Forums } from "./forums.js";
 import { GCPAuthMiddleware } from "./auth.js";
 import { AtomFeedService } from "./atom.js";
+import z from "zod";
 
 export function router(
   database: Database,
@@ -20,14 +21,16 @@ export function router(
   router.get("/posts", async (req, res) => {
     const fromQuery = req.query.from;
     const limitQuery = req.query.limit;
+    const filterQuery = req.query.filter as string | undefined;
 
     const from =
       typeof fromQuery === "string" ? fromQuery : new Date().toISOString();
     const limit = Number(limitQuery) > 0 ? Number(limitQuery) : 10;
+    const filter = parseFilterParam(filterQuery);
 
     let posts: Post[];
     try {
-      posts = await database.getPostsBefore(from, limit);
+      posts = await database.getPostsBefore(from, limit, filter);
     } catch (e) {
       console.error("Failed to fetch Posts");
       return res.sendStatus(500);
@@ -113,4 +116,26 @@ export function router(
   );
 
   return router;
+}
+
+const filterMap = {
+  youtube: "youtubeVideo",
+  patreon: "patreonPost",
+  forum: "forumThread",
+} as const;
+
+const filterParamSchema = z
+  .string()
+  .transform((str) => str.split(","))
+  .pipe(z.array(z.enum(["youtube", "patreon", "forum"])));
+
+type FilterType = (typeof filterMap)[keyof typeof filterMap];
+
+export function parseFilterParam(param: string | undefined): FilterType[] {
+  if (!param) return [];
+
+  const parsed = filterParamSchema.safeParse(param);
+  if (!parsed.success) return [];
+
+  return parsed.data.map((key) => filterMap[key]);
 }
