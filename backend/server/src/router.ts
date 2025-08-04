@@ -70,7 +70,7 @@ export function router(
 
       let forumPosts: Post[] = [];
       try {
-        const threads = await forum.getRecentThreads(50);
+        const threads = await forum.getRecentThreads();
         forumPosts = threads.map((thread) => ({
           id: generateShortId(`forumThread_${thread.id}`),
           publishedAt: thread.publishedAt,
@@ -88,7 +88,7 @@ export function router(
 
       let patreonPosts: Post[] = [];
       try {
-        const posts = await patreon.getRecentPosts(50);
+        const posts = await patreon.getRecentPosts();
         patreonPosts = posts.map((post) => ({
           id: generateShortId(`patreonPost_${post.id}`),
           publishedAt: post.publishedAt,

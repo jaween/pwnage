@@ -32,9 +32,22 @@ export class Youtube {
 
     const videos: YoutubeVideo[] = [];
     for (const entry of entries) {
-      let thumbnailUrl = entry["media:group"][0][
-        "media:thumbnail"
-      ][0].$.url.replace("hqdefault", "maxresdefault");
+      // Sometimes the max quality thumbnail isn't available
+      let thumbnailUrlOriginal =
+        entry["media:group"][0]["media:thumbnail"][0].$.url;
+      let thumbnailUrlMax = thumbnailUrlOriginal.replace(
+        "hqdefault",
+        "maxresdefault"
+      );
+      let thumbnailUrl: string = thumbnailUrlOriginal;
+      try {
+        const response = await axios.head(thumbnailUrlMax);
+        if (response.status === 200) {
+          thumbnailUrl = thumbnailUrlMax;
+        }
+      } catch {
+        // Ignored
+      }
       videos.push({
         id: entry["yt:videoId"][0],
         type: "youtubeVideo",
