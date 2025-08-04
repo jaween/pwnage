@@ -40,7 +40,7 @@ class PwnageImminentText extends StatelessWidget {
       'pwnage imminent',
       style: GoogleFonts.courierPrimeTextTheme(
         TextTheme.of(context),
-      ).titleLarge?.copyWith(letterSpacing: 1, color: red),
+      ).headlineSmall?.copyWith(letterSpacing: 1, color: red),
     );
   }
 }

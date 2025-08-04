@@ -19,11 +19,15 @@ class SourcesButton extends StatelessWidget {
     return Consumer(
       builder: (context, ref, child) {
         return Hero(
-          tag: 'hero-tag',
+          tag: 'sources',
           createRectTween: (begin, end) => RectTween(begin: begin, end: end),
           child: OutlinedButton(
+            style: OutlinedButton.styleFrom(alignment: Alignment.topCenter),
             onPressed: () => _showFilterModal(context, ref),
-            child: Text('SOURCES'),
+            child: Padding(
+              padding: const EdgeInsets.only(top: 14.0),
+              child: Text('SOURCES'),
+            ),
           ),
         );
       },
@@ -36,8 +40,6 @@ class SourcesButton extends StatelessWidget {
         opaque: false,
         barrierColor: Colors.black87,
         barrierDismissible: true,
-        // transitionDuration: Duration(milliseconds: 800),
-        // reverseTransitionDuration: Duration(milliseconds: 800),
         pageBuilder: (_, __, ___) => _FilterSheet(filter: filter),
       ),
     );
@@ -142,7 +144,7 @@ class _FilterSheetHero extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.only(left: 16, right: 16, top: 154),
         child: Hero(
-          tag: 'hero-tag',
+          tag: 'sources',
           createRectTween: (begin, end) => RectTween(begin: begin, end: end),
           child: child,
         ),

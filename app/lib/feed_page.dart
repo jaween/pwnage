@@ -21,6 +21,7 @@ class FeedPage extends ConsumerStatefulWidget {
 
 class _FeedPageState extends ConsumerState<FeedPage> {
   List<Post>? _posts;
+  bool _hasShownFirstPosts = false;
 
   @override
   void initState() {
@@ -28,9 +29,22 @@ class _FeedPageState extends ConsumerState<FeedPage> {
     ref.listenManual(postsProvider, (prev, next) {
       final value = next.valueOrNull;
       if (value != null) {
-        setState(() => _posts = value.posts);
+        _updatePosts(value);
       }
     });
+  }
+
+  void _updatePosts(PostsState value) async {
+    // Artificial delay to not overload the user with too many animations
+    if (!_hasShownFirstPosts) {
+      await Future.delayed(const Duration(milliseconds: 1500));
+      if (!mounted) {
+        return;
+      }
+      setState(() => _hasShownFirstPosts = true);
+    }
+
+    setState(() => _posts = value.posts);
   }
 
   @override
@@ -44,8 +58,7 @@ class _FeedPageState extends ConsumerState<FeedPage> {
     final posts = ref.watch(postsProvider);
     return switch (posts) {
       AsyncError() => posts.isLoading ? _Loading() : _SomethingWentWrong(),
-      AsyncData(:final value) => _Feed(posts: value.posts),
-      AsyncLoading() || _ => _Feed(posts: null),
+      AsyncData() || AsyncLoading() || _ => _Feed(posts: null),
     };
   }
 }
@@ -100,7 +113,7 @@ class _FeedState extends ConsumerState<_Feed>
               alignment: Alignment.center,
               children: [
                 AnimatedOpacity(
-                  duration: const Duration(milliseconds: 500),
+                  duration: const Duration(milliseconds: 800),
                   opacity: posts == null ? 1.0 : 0.0,
                   child: Padding(
                     padding: const EdgeInsets.only(top: 24.0),
@@ -143,9 +156,7 @@ class _FeedState extends ConsumerState<_Feed>
             loading: ref.watch(postsProvider.select((p) => p.isLoading)),
             child: ListView.builder(
               controller: _scrollController,
-              padding:
-                  MediaQuery.paddingOf(context).copyWith(top: 0) +
-                  EdgeInsets.only(bottom: 88),
+              padding: MediaQuery.paddingOf(context).copyWith(top: 0),
               scrollDirection: Axis.vertical,
               itemCount: posts == null ? 2 : posts.length + 1,
               itemBuilder: (context, indexPlusOne) {
@@ -156,34 +167,38 @@ class _FeedState extends ConsumerState<_Feed>
 
                 if (posts == null) {
                   return PostContainer(
-                    onTap: null,
-                    isFirst: true,
-                    child: Container(
-                      height: MediaQuery.of(context).size.height * 0.5,
-                      color: Colors.orange,
-                    ),
-                  );
+                        onTap: null,
+                        isFirst: true,
+                        child: PostPlaceholderContents(),
+                      )
+                      .animate(onPlay: (controller) => controller.repeat())
+                      .shimmer(
+                        duration: const Duration(seconds: 1),
+                        angle: 60 * (pi / 180),
+                      );
                 }
 
                 final index = indexPlusOne - 1;
                 final post = posts[index];
                 return PostContainer(
-                  key: ValueKey(post.id),
-                  onTap: () => _launch(post.url),
-                  isFirst: index == 0,
-                  isLast: index == posts.length - 1,
-                  child: IgnorePointer(
-                    child: PostContents(
-                      extraTopPadding: index == 0 ? 50 : 0,
-                      post: post,
-                    ),
-                  ),
-                ).animate().scale(
-                  begin: Offset(1.1, 1.1),
-                  end: Offset(1, 1),
-                  curve: Curves.easeOutQuad,
-                  duration: const Duration(milliseconds: 300),
-                );
+                      key: ValueKey(post.id),
+                      onTap: () => _launch(post.url),
+                      isFirst: index == 0,
+                      isLast: index == posts.length - 1,
+                      child: IgnorePointer(
+                        child: PostContents(
+                          extraTopPadding: index == 0 ? 50 : 0,
+                          post: post,
+                        ),
+                      ),
+                    )
+                    .animate()
+                    .effect(
+                      curve: Curves.easeOutQuad,
+                      duration: const Duration(milliseconds: 500),
+                    )
+                    .scale(begin: Offset(0.95, 0.95), end: Offset(1.0, 1.0))
+                    .fadeIn();
               },
             ),
           ),

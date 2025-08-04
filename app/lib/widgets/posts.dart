@@ -196,6 +196,82 @@ class PostContents extends StatelessWidget {
   }
 }
 
+class PostPlaceholderContents extends StatelessWidget {
+  const PostPlaceholderContents({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Colors.grey.shade900,
+      child: Stack(
+        children: [
+          Positioned(
+            left: 16,
+            top: 70,
+            width: 100,
+            height: 32,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.all(Radius.circular(4)),
+                color: Colors.grey.shade800,
+              ),
+            ),
+          ),
+          Positioned(
+            right: 16,
+            top: 70,
+            height: 32,
+            child: Row(
+              children: [
+                Container(
+                  width: 100,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.all(Radius.circular(4)),
+                    color: Colors.grey.shade800,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade800,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Positioned(
+            left: 16,
+            top: 70 + 16 + 32,
+            right: 16,
+            height: 48,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.all(Radius.circular(4)),
+                color: Colors.grey.shade800,
+              ),
+            ),
+          ),
+          Positioned(
+            left: 16,
+            top: 70 + 16 + 32 + 16 + 48,
+            right: 16,
+            bottom: 16,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.all(Radius.circular(4)),
+                color: Colors.grey.shade800,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _AnimatedTap extends StatefulWidget {
   final void Function()? onTap;
   final Widget child;
@@ -313,12 +389,8 @@ class _Metadata extends StatelessWidget {
             height: 32,
             clipBehavior: Clip.hardEdge,
             decoration: BoxDecoration(
-              color: Colors.pink,
               shape: BoxShape.circle,
-              gradient: RadialGradient(
-                colors: [Colors.black, Colors.transparent],
-                stops: [0.0, 1.0],
-              ),
+              color: Colors.grey,
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withAlpha(25),
@@ -327,13 +399,7 @@ class _Metadata extends StatelessWidget {
                 ),
               ],
             ),
-            child: Image.network(
-              avatarUrl,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, s) {
-                return Icon(Icons.account_circle);
-              },
-            ),
+            child: FadeInNetworkImage(avatarUrl, fit: BoxFit.cover),
           ),
           const SizedBox(width: 8),
         ],
