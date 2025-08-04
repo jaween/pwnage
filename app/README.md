@@ -1,16 +1,13 @@
-# pwnage
+# The Pwnage Feed app
 
-A new Flutter project.
+## How to run
 
-## Getting Started
+1. Install Flutter
 
-This project is a starting point for a Flutter application.
+2. Get dependencies by running `flutter pub get`
 
-A few resources to get you started if this is your first Flutter project:
+3. Generate code by running `dart run build_runner build`
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+4. If running on iOS, from the `ios` directory run `pod install`
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+5. Run the app with `flutter run --dart-define=SERVER_BASE_URL=<BACKEND URL>`
