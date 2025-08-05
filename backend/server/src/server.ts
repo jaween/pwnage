@@ -38,6 +38,11 @@ async function init() {
     throw "Missing Patreon Campaign ID";
   }
 
+  let serverBaseUrl = process.env.SERVER_BASE_URL;
+  if (!serverBaseUrl) {
+    throw "Missing Server Base URL";
+  }
+
   const database = new Database();
   const gcpAuthMiddleware = new GCPAuthMiddleware(
     projectId,
@@ -68,7 +73,8 @@ async function init() {
       atomFeedService,
       youtube,
       forum,
-      patreon
+      patreon,
+      serverBaseUrl
     )
   );
 

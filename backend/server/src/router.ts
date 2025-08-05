@@ -1,5 +1,11 @@
 import { Request, Response, Router } from "express";
-import { Database, Post } from "./database.js";
+import {
+  Database,
+  ForumThread,
+  PatreonPost,
+  Post,
+  YoutubeVideo,
+} from "./database.js";
 import { generateShortId } from "./util.js";
 import { Patreon } from "./patreon.js";
 import { Youtube } from "./youtube.js";
@@ -7,6 +13,7 @@ import { Forums } from "./forums.js";
 import { GCPAuthMiddleware } from "./auth.js";
 import { AtomFeedService } from "./atom.js";
 import z from "zod";
+import { Readable } from "stream";
 
 export function router(
   database: Database,
@@ -14,7 +21,8 @@ export function router(
   atomFeedService: AtomFeedService,
   youtube: Youtube,
   forum: Forums,
-  patreon: Patreon
+  patreon: Patreon,
+  serverBaseUrl: string
 ): Router {
   const router = Router();
 
@@ -29,20 +37,105 @@ export function router(
     limit = limit > 0 && limit < 30 ? Number(limitQuery) : 10;
     const filter = parseFilterParam(filterQuery);
 
-    let posts: Post[];
+    let unproxiedPosts: Post[];
     try {
-      posts = await database.getPostsBefore(before, limit, filter);
+      unproxiedPosts = await database.getPostsBefore(before, limit, filter);
     } catch (e) {
       console.error("Failed to fetch Posts");
       return res.sendStatus(500);
     }
 
+    const proxiedPosts: Post[] = [];
+    for (const post of unproxiedPosts) {
+      proxiedPosts.push({
+        ...post,
+        author: {
+          ...post.author,
+          avatarUrl: proxifyImage(post.author.avatarUrl, serverBaseUrl)!,
+        },
+        data: ((): YoutubeVideo | PatreonPost | ForumThread => {
+          switch (post.data.type) {
+            case "youtubeVideo":
+              return {
+                ...post.data,
+                channel: {
+                  ...post.data.channel,
+                  imageUrl: proxifyImage(
+                    post.data.channel.imageUrl,
+                    serverBaseUrl
+                  )!,
+                },
+                thumbnailUrl: proxifyImage(
+                  post.data.thumbnailUrl,
+                  serverBaseUrl
+                )!,
+              };
+            case "forumThread":
+              return {
+                ...post.data,
+                author: {
+                  ...post.data.author,
+                  avatarUrl: proxifyImage(
+                    post.data.author.avatarUrl,
+                    serverBaseUrl
+                  )!,
+                },
+              };
+            case "patreonPost":
+              return {
+                ...post.data,
+                author: {
+                  ...post.data.author,
+                  avatarUrl: proxifyImage(
+                    post.data.author.avatarUrl,
+                    serverBaseUrl
+                  )!,
+                },
+                imageUrl: proxifyImage(
+                  post.data.imageUrl ?? undefined,
+                  serverBaseUrl
+                ),
+              };
+            default:
+              return post.data;
+          }
+        })(),
+      });
+    }
+
     const accept = req.headers.accept || "";
     if (accept.includes("application/json")) {
-      res.json({ posts: posts, hasMore: posts.length >= limit });
+      res.json({ posts: proxiedPosts, hasMore: proxiedPosts.length >= limit });
     } else {
-      const feedXml = atomFeedService.buildXml(posts, new Date());
+      const feedXml = atomFeedService.buildXml(proxiedPosts, new Date());
       res.type("application/atom+xml").send(feedXml);
+    }
+  });
+
+  // Since we just link to external images, this avoids CORS issues when deployed on the web
+  router.get("/image_proxy", async (req, res) => {
+    const targetUrl = req.query.url as string;
+    if (!targetUrl) {
+      return res.status(400).send("Missing url parameter");
+    }
+
+    try {
+      const response = await fetch(targetUrl);
+      if (!response.ok) {
+        return res.status(response.status).send("Failed to fetch image");
+      }
+
+      res.setHeader(
+        "Content-Type",
+        response.headers.get("content-type") || "application/octet-stream"
+      );
+      res.setHeader("Access-Control-Allow-Origin", "*");
+
+      const nodeStream = Readable.fromWeb(response.body as any);
+      nodeStream.pipe(res);
+    } catch (err) {
+      console.error("Error proxying image:", err);
+      res.status(500).send("Error fetching image");
     }
   });
 
@@ -117,6 +210,16 @@ export function router(
   );
 
   return router;
+}
+
+function proxifyImage(
+  url: string | null | undefined,
+  serverBaseUrl: string
+): string | null | undefined {
+  if (!url) {
+    return url;
+  }
+  return `${serverBaseUrl}/v1/image_proxy?url=${encodeURIComponent(url)}`;
 }
 
 const filterMap = {
