@@ -7,6 +7,8 @@ import 'package:pwnage/services/api_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  BrowserContextMenu.disableContextMenu();
+
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
   const apiBaseUrl = String.fromEnvironment('SERVER_BASE_URL');
