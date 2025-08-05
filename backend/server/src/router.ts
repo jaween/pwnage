@@ -30,6 +30,7 @@ export function router(
     const beforeQuery = req.query.before;
     const limitQuery = req.query.limit;
     const filterQuery = req.query.filter as string | undefined;
+    const appPlatform = req.headers["x-app-platform"] as string | undefined;
 
     const before =
       typeof beforeQuery === "string" ? beforeQuery : new Date().toISOString();
@@ -45,62 +46,65 @@ export function router(
       return res.sendStatus(500);
     }
 
-    const proxiedPosts: Post[] = [];
-    for (const post of unproxiedPosts) {
-      proxiedPosts.push({
-        ...post,
-        author: {
-          ...post.author,
-          avatarUrl: proxifyImage(post.author.avatarUrl, serverBaseUrl)!,
-        },
-        data: ((): YoutubeVideo | PatreonPost | ForumThread => {
-          switch (post.data.type) {
-            case "youtubeVideo":
-              return {
-                ...post.data,
-                channel: {
-                  ...post.data.channel,
+    const shouldProxy = appPlatform === "web";
+    const proxiedPosts: Post[] = shouldProxy ? [] : unproxiedPosts;
+    if (shouldProxy) {
+      for (const post of unproxiedPosts) {
+        proxiedPosts.push({
+          ...post,
+          author: {
+            ...post.author,
+            avatarUrl: proxifyImage(post.author.avatarUrl, serverBaseUrl)!,
+          },
+          data: ((): YoutubeVideo | PatreonPost | ForumThread => {
+            switch (post.data.type) {
+              case "youtubeVideo":
+                return {
+                  ...post.data,
+                  channel: {
+                    ...post.data.channel,
+                    imageUrl: proxifyImage(
+                      post.data.channel.imageUrl,
+                      serverBaseUrl
+                    )!,
+                  },
+                  thumbnailUrl: proxifyImage(
+                    post.data.thumbnailUrl,
+                    serverBaseUrl
+                  )!,
+                };
+              case "forumThread":
+                return {
+                  ...post.data,
+                  author: {
+                    ...post.data.author,
+                    avatarUrl: proxifyImage(
+                      post.data.author.avatarUrl,
+                      serverBaseUrl
+                    )!,
+                  },
+                };
+              case "patreonPost":
+                return {
+                  ...post.data,
+                  author: {
+                    ...post.data.author,
+                    avatarUrl: proxifyImage(
+                      post.data.author.avatarUrl,
+                      serverBaseUrl
+                    )!,
+                  },
                   imageUrl: proxifyImage(
-                    post.data.channel.imageUrl,
+                    post.data.imageUrl ?? undefined,
                     serverBaseUrl
-                  )!,
-                },
-                thumbnailUrl: proxifyImage(
-                  post.data.thumbnailUrl,
-                  serverBaseUrl
-                )!,
-              };
-            case "forumThread":
-              return {
-                ...post.data,
-                author: {
-                  ...post.data.author,
-                  avatarUrl: proxifyImage(
-                    post.data.author.avatarUrl,
-                    serverBaseUrl
-                  )!,
-                },
-              };
-            case "patreonPost":
-              return {
-                ...post.data,
-                author: {
-                  ...post.data.author,
-                  avatarUrl: proxifyImage(
-                    post.data.author.avatarUrl,
-                    serverBaseUrl
-                  )!,
-                },
-                imageUrl: proxifyImage(
-                  post.data.imageUrl ?? undefined,
-                  serverBaseUrl
-                ),
-              };
-            default:
-              return post.data;
-          }
-        })(),
-      });
+                  ),
+                };
+              default:
+                return post.data;
+            }
+          })(),
+        });
+      }
     }
 
     const accept = req.headers.accept || "";

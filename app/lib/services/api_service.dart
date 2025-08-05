@@ -22,7 +22,10 @@ class ApiService {
   late final http.Client _client;
 
   ApiService({required this.baseUrl})
-    : _headers = {'accept': 'application/json'} {
+    : _headers = {
+        'accept': 'application/json',
+        'x-app-platform': _appPlatform,
+      } {
     _client = http.Client();
   }
 
@@ -81,6 +84,17 @@ Future<Either<Error, R>> _makeRequest<T, R>({
     debugPrint(s.toString());
     return left('UnhandledError(${e.toString()})');
   }
+}
+
+String get _appPlatform {
+  if (kIsWeb || kIsWasm) {
+    return 'web';
+  } else if (Platform.isIOS) {
+    return 'ios';
+  } else if (Platform.isAndroid) {
+    return 'android';
+  }
+  return 'web';
 }
 
 @freezed
