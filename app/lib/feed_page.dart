@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -252,7 +253,9 @@ class _FeedState extends ConsumerState<_Feed>
 
   void _launch(String url) async {
     final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
+    const web = kIsWeb || kIsWasm;
+    // Ensures links open on web and mobile (see web transient user activation)
+    if (web || await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
   }
