@@ -2,6 +2,8 @@
 
 ## How to run
 
+0. Deploy the server found in `backend/`
+
 1. Install Flutter
 
 2. Get dependencies by running `flutter pub get`
