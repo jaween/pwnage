@@ -39,7 +39,7 @@ class ApiService {
     Set<PostDataType>? filter,
   }) {
     final queryParams = [
-      'before=${(before ?? DateTime.now()).toIso8601String()}',
+      'before=${(before ?? DateTime.now().toUtc()).toIso8601String()}',
       'limit=$limit',
       if (filter != null) 'filter=${filter.map((f) => f.queryKey).join(',')}',
     ].join('&');

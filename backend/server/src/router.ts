@@ -33,7 +33,9 @@ export function router(
     const appPlatform = req.headers["x-app-platform"] as string | undefined;
 
     const before =
-      typeof beforeQuery === "string" ? beforeQuery : new Date().toISOString();
+      typeof beforeQuery === "string"
+        ? new Date(beforeQuery).toISOString()
+        : new Date().toISOString();
     let limit = Number(limitQuery);
     limit = limit > 0 && limit < 30 ? Number(limitQuery) : 10;
     const filter = parseFilterParam(filterQuery);

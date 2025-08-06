@@ -52,8 +52,8 @@ export class Youtube {
         id: entry["yt:videoId"][0],
         type: "youtubeVideo",
         url: entry.link[0].$.href,
-        publishedAt: entry.published[0],
-        updatedAt: entry.updated[0],
+        publishedAt: new Date(entry.published[0]).toISOString(),
+        updatedAt: new Date(entry.updated[0]).toISOString(),
         channel: {
           name: entry.author[0].name[0],
           // TODO: Get image from query

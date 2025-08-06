@@ -83,8 +83,8 @@ export class Forums {
         type: "forumThread",
         title: entry.title._,
         url: entry.link?.href,
-        publishedAt: entry.published,
-        updatedAt: entry.updated,
+        publishedAt: new Date(entry.published).toISOString(),
+        updatedAt: new Date(entry.updated).toISOString(),
         author: {
           uid: authorUid,
           name: authorName,

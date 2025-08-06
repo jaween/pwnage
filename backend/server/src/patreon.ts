@@ -40,7 +40,7 @@ export class Patreon {
             id: entry.id,
             type: "patreonPost",
             url: entry.attributes.url,
-            publishedAt: entry.attributes.published_at,
+            publishedAt: new Date(entry.attributes.published_at).toISOString(),
             author: {
               name: "teh_pwnage",
               // TODO: Get image from query
