@@ -65,18 +65,24 @@ async function init() {
     );
     next();
   });
-  expressApp.use(
-    "/v1",
-    router(
-      database,
-      gcpAuthMiddleware,
-      atomFeedService,
-      youtube,
-      forum,
-      patreon,
-      serverBaseUrl
-    )
+
+  const apiRouter = router(
+    database,
+    gcpAuthMiddleware,
+    atomFeedService,
+    youtube,
+    forum,
+    patreon,
+    serverBaseUrl
   );
+
+  expressApp.use("/v1", apiRouter);
+
+  // Feed-only endpoint
+  expressApp.get("/", (req, res, next) => {
+    req.url = "/posts";
+    (apiRouter as any).handle(req, res, next);
+  });
 
   const port = process.env.PORT || 8080;
   expressApp.listen(port, () => {
