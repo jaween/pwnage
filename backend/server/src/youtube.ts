@@ -1,70 +1,65 @@
 import axios from "axios";
-import xml2js from "xml2js";
 import { YoutubeVideo } from "./database.js";
 
 export class Youtube {
-  private feedUrl: string;
+  private apiKey: string;
+  private channelId: string;
 
-  constructor(channelId: string) {
-    this.feedUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`;
+  constructor(channelId: string, apiKey: string) {
+    this.channelId = channelId;
+    this.apiKey = apiKey;
   }
 
-  async getRecentVideos(): Promise<YoutubeVideo[]> {
-    let response;
-    try {
-      response = await axios.get(this.feedUrl, { responseType: "text" });
-    } catch (error) {
-      throw new Error("Error fetching the YouTube feed");
-    }
-
-    const parser = new xml2js.Parser();
-    let result;
-    try {
-      result = await parser.parseStringPromise(response.data);
-    } catch (e) {
-      throw new Error("Error parsing XML");
-    }
-
-    const entries = result.feed.entry;
-    if (!entries || !Array.isArray(entries)) {
-      return [];
-    }
-
-    const videos: YoutubeVideo[] = [];
-    for (const entry of entries) {
-      // Sometimes the max quality thumbnail isn't available
-      let thumbnailUrlOriginal =
-        entry["media:group"][0]["media:thumbnail"][0].$.url;
-      let thumbnailUrlMax = thumbnailUrlOriginal.replace(
-        "hqdefault",
-        "maxresdefault"
-      );
-      let thumbnailUrl: string = thumbnailUrlOriginal;
-      try {
-        const response = await axios.head(thumbnailUrlMax);
-        if (response.status === 200) {
-          thumbnailUrl = thumbnailUrlMax;
-        }
-      } catch {
-        // Ignored
+  async getRecentVideos(limit = 5): Promise<YoutubeVideo[]> {
+    const searchResponse = await axios.get(
+      "https://www.googleapis.com/youtube/v3/search",
+      {
+        params: {
+          part: "snippet",
+          channelId: this.channelId,
+          maxResults: limit,
+          order: "date",
+          type: "video",
+          key: this.apiKey,
+        },
       }
-      videos.push({
-        id: entry["yt:videoId"][0],
+    );
+
+    const videoIds = searchResponse.data.items
+      .map((item: any) => item.id.videoId)
+      .join(",");
+
+    const videoDetailsResponse = await axios.get(
+      "https://www.googleapis.com/youtube/v3/videos",
+      {
+        params: {
+          part: "snippet,liveStreamingDetails",
+          id: videoIds,
+          key: this.apiKey,
+        },
+      }
+    );
+
+    const videos: YoutubeVideo[] = videoDetailsResponse.data.items.map(
+      (item: any) => ({
+        id: item.id,
         type: "youtubeVideo",
-        url: entry.link[0].$.href,
-        publishedAt: new Date(entry.published[0]).toISOString(),
-        updatedAt: new Date(entry.updated[0]).toISOString(),
+        url: `https://www.youtube.com/watch?v=${item.id}`,
+        publishedAt: new Date(item.snippet.publishedAt).toISOString(),
+        updatedAt: new Date(item.snippet.publishedAt).toISOString(),
         channel: {
-          name: entry.author[0].name[0],
-          // TODO: Get image from query
+          name: item.snippet.channelTitle,
           imageUrl:
             "https://yt3.googleusercontent.com/S9JpZaNNSU3Mnpf1hcThTX9_idWkP80hGWJQq_phybGW_QsPkPkZ_PsVQohBSQkun8iSf_GDFg",
         },
-        title: entry.title[0],
-        description: entry["media:group"][0]["media:description"][0],
-        thumbnailUrl: thumbnailUrl,
-      });
-    }
+        title: item.snippet.title,
+        description: item.snippet.description,
+        thumbnailUrl:
+          item.snippet.thumbnails?.maxres?.url ??
+          item.snippet.thumbnails?.high?.url ??
+          item.snippet.thumbnails?.default?.url,
+      })
+    );
 
     return videos;
   }

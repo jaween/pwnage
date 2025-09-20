@@ -28,6 +28,11 @@ async function init() {
     throw "Missing YouTube Channel ID";
   }
 
+  let youtubeApiKey = process.env.YOUTUBE_API_KEY;
+  if (!youtubeApiKey) {
+    throw "Missing YouTube API Key";
+  }
+
   let forumsAtomUrl = process.env.FORUMS_ATOM_URL;
   if (!forumsAtomUrl) {
     throw "Missing Forums Atom URL";
@@ -49,7 +54,7 @@ async function init() {
     serviceAccountEmail
   );
   const atomFeedService = new AtomFeedService();
-  const youtube = new Youtube(youtubeChannelId);
+  const youtube = new Youtube(youtubeChannelId, youtubeApiKey);
   const forum = new Forums(forumsAtomUrl);
   const patreon = new Patreon(patreonCampaignId);
 
