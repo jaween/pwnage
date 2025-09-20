@@ -18,6 +18,7 @@ export class Patreon {
         "fields[post]":
           "id,url,title,teaser_text,content,image,thumbnail_url,published_at",
         include: "images",
+        sort: "-published_at",
       },
     });
 
