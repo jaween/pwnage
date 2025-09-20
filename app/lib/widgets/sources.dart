@@ -72,58 +72,61 @@ class _FilterSheetState extends State<_FilterSheet> {
         return;
       },
       child: _FilterSheetHero(
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadiusGeometry.all(Radius.circular(8)),
-            border: Border.all(color: red),
-            color: Colors.black,
-          ),
-          child: Material(
-            type: MaterialType.transparency,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const SizedBox(height: 16),
-                  Center(
-                    child: Text(
-                      'SOURCES OF PWNAGE',
-                      style: TextTheme.of(context).headlineSmall,
-                      textAlign: TextAlign.center,
-                      maxLines: 1,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: 400),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadiusGeometry.all(Radius.circular(8)),
+              border: Border.all(color: red),
+              color: Colors.black,
+            ),
+            child: Material(
+              type: MaterialType.transparency,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(height: 16),
+                    Center(
+                      child: Text(
+                        'SOURCES OF PWNAGE',
+                        style: TextTheme.of(context).headlineSmall,
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  for (final type in PostDataType.values)
-                    Builder(
-                      builder: (context) {
-                        final value = _filter.contains(type);
-                        final enabled =
-                            !_filter.contains(type) || _filter.length > 1;
-                        return ListTile(
-                          enabled: enabled,
-                          onTap: () => setState(
-                            () => !value
-                                ? _filter.add(type)
-                                : _filter.remove(type),
-                          ),
-                          leading: SizedBox.square(
-                            dimension: 16,
-                            child: _SourceIcon(
-                              type: type,
-                              color: enabled
-                                  ? Colors.white
-                                  : Theme.of(context).disabledColor,
+                    const SizedBox(height: 16),
+                    for (final type in PostDataType.values)
+                      Builder(
+                        builder: (context) {
+                          final value = _filter.contains(type);
+                          final enabled =
+                              !_filter.contains(type) || _filter.length > 1;
+                          return ListTile(
+                            enabled: enabled,
+                            onTap: () => setState(
+                              () => !value
+                                  ? _filter.add(type)
+                                  : _filter.remove(type),
                             ),
-                          ),
-                          title: Text(type.label),
-                          trailing: value
-                              ? Icon(Icons.check)
-                              : const SizedBox.shrink(),
-                        );
-                      },
-                    ),
-                ],
+                            leading: SizedBox.square(
+                              dimension: 16,
+                              child: _SourceIcon(
+                                type: type,
+                                color: enabled
+                                    ? Colors.white
+                                    : Theme.of(context).disabledColor,
+                              ),
+                            ),
+                            title: Text(type.label),
+                            trailing: value
+                                ? Icon(Icons.check)
+                                : const SizedBox.shrink(),
+                          );
+                        },
+                      ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -163,7 +166,6 @@ class SourceBadge extends StatelessWidget {
       padding: EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
-          const SizedBox(width: 8),
           SizedBox.square(dimension: 16, child: _SourceIcon(type: type)),
           const SizedBox(width: 12),
           Text(switch (type) {

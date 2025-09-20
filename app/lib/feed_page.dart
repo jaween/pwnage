@@ -75,7 +75,6 @@ class _Feed extends ConsumerStatefulWidget {
 
 class _FeedState extends ConsumerState<_Feed>
     with SingleTickerProviderStateMixin {
-  late final _logoController = AnimationController(vsync: this);
   final _scrollController = ScrollController();
 
   @override
@@ -85,16 +84,7 @@ class _FeedState extends ConsumerState<_Feed>
   }
 
   @override
-  void didUpdateWidget(covariant _Feed oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.posts == null && widget.posts != null) {
-      _logoController.forward();
-    }
-  }
-
-  @override
   void dispose() {
-    _logoController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
@@ -102,138 +92,78 @@ class _FeedState extends ConsumerState<_Feed>
   @override
   Widget build(BuildContext context) {
     final posts = widget.posts;
-    return Stack(
-      children: [
-        Align(
-          alignment: Alignment.topCenter,
-          child: Padding(
-            padding: EdgeInsets.only(
-              top: MediaQuery.sizeOf(context).height / 4 - 60,
-            ),
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                AnimatedOpacity(
-                  duration: const Duration(milliseconds: 800),
-                  opacity: posts == null ? 1.0 : 0.0,
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 24.0),
-                    child: PwnageImminentText(),
-                  ),
-                ),
-                AnimatedBuilder(
-                  animation: _scrollController,
-                  builder: (context, child) {
-                    final value = !_scrollController.hasClients
-                        ? 1.0
-                        : Curves.easeOutCubic.transform(
-                            (1 - _scrollController.offset / 225).clamp(
-                              0.0,
-                              1.0,
-                            ),
-                          );
-                    return Transform.translate(
-                      offset: Offset(0, -(1 - value) * 80),
-                      child: Opacity(opacity: value, child: child),
-                    );
-                  },
-                  child: Logo()
-                      .animate(controller: _logoController, autoPlay: false)
-                      .effect(
-                        delay: const Duration(milliseconds: 800),
-                        duration: const Duration(milliseconds: 800),
-                        curve: Curves.easeOutQuad,
-                      )
-                      .scale(begin: Offset(1.3, 1.3), end: Offset(1.0, 1.0))
-                      .slideY(begin: 1.3, end: 0.0)
-                      .fadeIn(),
-                ),
-              ],
-            ),
-          ),
+    return CustomScrollView(
+      controller: _scrollController,
+      slivers: [
+        SliverToBoxAdapter(
+          child: SizedBox(height: MediaQuery.paddingOf(context).top),
         ),
-        Positioned.fill(
-          child: _LoadingEffect(
-            loading: ref.watch(postsProvider.select((p) => p.isLoading)),
-            child: ListView.builder(
-              controller: _scrollController,
-              padding: MediaQuery.paddingOf(context).copyWith(top: 0),
-              scrollDirection: Axis.vertical,
-              itemCount: posts == null ? 2 : posts.length + 1,
-              itemBuilder: (context, indexPlusOne) {
-                final halfHeight = MediaQuery.of(context).size.height * 0.5;
-                if (indexPlusOne == 0) {
-                  return Container(height: halfHeight);
-                }
-
-                if (posts == null) {
-                  return PostContainer(
-                        onTap: null,
-                        isFirst: true,
-                        child: PostPlaceholderContents(),
-                      )
-                      .animate(onPlay: (controller) => controller.repeat())
-                      .shimmer(
-                        duration: const Duration(seconds: 1),
-                        angle: 60 * (pi / 180),
-                      );
-                }
-
-                final index = indexPlusOne - 1;
-                final post = posts[index];
-                return PostContainer(
-                      key: ValueKey(post.id),
-                      onTap: () => _launch(post.url),
-                      isFirst: index == 0,
-                      isLast: index == posts.length - 1,
-                      child: IgnorePointer(
-                        child: PostContents(
-                          extraTopPadding: index == 0 ? 50 : 0,
-                          post: post,
-                        ),
-                      ),
-                    )
-                    .animate()
-                    .effect(
-                      curve: Curves.easeOutQuad,
-                      duration: const Duration(milliseconds: 500),
-                    )
-                    .scale(begin: Offset(0.95, 0.95), end: Offset(1.0, 1.0))
-                    .fadeIn();
-              },
-            ),
-          ),
-        ),
-        Align(
-          alignment: Alignment.center,
-          child: AnimatedOpacity(
-            duration: const Duration(milliseconds: 600),
-            opacity: posts == null ? 0.0 : 1.0,
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 32.0),
-              child: AnimatedBuilder(
-                animation: _scrollController,
-                builder: (context, child) {
-                  final value = (1 - _scrollController.offset / 30).clamp(
-                    0.0,
-                    1.0,
-                  );
-                  return IgnorePointer(
-                    ignoring: value <= 0.0,
-                    child: Transform.translate(
-                      offset: Offset(0, -(1 - value) * 20),
-                      child: Opacity(opacity: value, child: child),
-                    ),
-                  );
-                },
-                child: SourcesButton(
-                  filter: Set.of(ref.read(postFilterProvider)),
-                  onUpdateFilter: (filter) =>
-                      ref.read(postFilterProvider.notifier).filter = filter,
-                ),
+        SliverToBoxAdapter(child: SizedBox(height: 32)),
+        SliverToBoxAdapter(child: Logo()),
+        SliverToBoxAdapter(child: SizedBox(height: 32)),
+        SliverToBoxAdapter(
+          child: Center(
+            child: AnimatedOpacity(
+              duration: const Duration(milliseconds: 600),
+              opacity: posts == null ? 0.0 : 1.0,
+              child: SourcesButton(
+                filter: Set.of(ref.read(postFilterProvider)),
+                onUpdateFilter: (filter) =>
+                    ref.read(postFilterProvider.notifier).filter = filter,
               ),
             ),
           ),
+        ),
+        SliverToBoxAdapter(child: SizedBox(height: 32)),
+        SliverList.separated(
+          itemCount: posts?.length,
+          separatorBuilder: (_, _) => const SizedBox(height: 16),
+          itemBuilder: (context, index) {
+            if (posts == null) {
+              return _LoadingEffect(
+                loading: ref.watch(postsProvider.select((p) => p.isLoading)),
+                child: Center(
+                  child: Container(
+                    constraints: BoxConstraints(maxWidth: 550),
+                    padding: EdgeInsets.symmetric(horizontal: 16),
+                    child:
+                        PostContainer(
+                              onTap: null,
+                              child: PostPlaceholderContents(),
+                            )
+                            .animate(
+                              onPlay: (controller) => controller.repeat(),
+                            )
+                            .shimmer(
+                              duration: const Duration(seconds: 1),
+                              angle: 60 * (pi / 180),
+                            ),
+                  ),
+                ),
+              );
+            }
+
+            final post = posts[index];
+            return Center(
+              key: ValueKey(post.id),
+              child: Container(
+                constraints: BoxConstraints(maxWidth: 550),
+                padding: EdgeInsets.symmetric(horizontal: 16),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: 550),
+                  child: PostContainer(
+                    key: ValueKey(post.id),
+                    onTap: () => _launch(post.url),
+                    child: IgnorePointer(child: PostContents(post: post)),
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+        SliverToBoxAdapter(child: SizedBox(height: 16)),
+        SliverToBoxAdapter(
+          child: SizedBox(height: MediaQuery.paddingOf(context).bottom),
         ),
       ],
     );
