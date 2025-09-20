@@ -36,6 +36,11 @@ export class Patreon {
     let posts: PatreonPost[] = [];
     for (const entry of data.data) {
       try {
+        let text = entry.attributes.teaser_text;
+        if (!text || text.length == 0) {
+          text = entry.attributes.content;
+        }
+
         posts.push(
           patreonPostSchema.parse({
             id: entry.id,
@@ -49,7 +54,7 @@ export class Patreon {
                 "https://yt3.googleusercontent.com/S9JpZaNNSU3Mnpf1hcThTX9_idWkP80hGWJQq_phybGW_QsPkPkZ_PsVQohBSQkun8iSf_GDFg",
             },
             title: entry.attributes.title,
-            teaserText: entry.attributes.teaser_text ?? null,
+            teaserText: text,
             imageUrl: entry.attributes.image?.thumb_url ?? null,
           })
         );
